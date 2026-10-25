@@ -25,3 +25,12 @@ body.invitation-locked{overflow:hidden}
 @keyframes invitationHint{50%{opacity:.55;transform:translateY(2px)}}
 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:480px){.invitation-letter{height:210px}.invitation-letter__paper{inset:5px 13px 27px}.invitation-letter__envelope{top:63px}.invitation-letter__flap{height:126px}.invitation-letter__seal{top:116px}}
+
+/* Scratch-to-reveal countdown overlay; the timer keeps its original dimensions. */
+.countdown{position:relative}
+.countdown-scratch{position:absolute;z-index:5;inset:0;display:block;width:100%;height:100%;overflow:visible;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:opacity .55s ease}
+.countdown-scratch:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:12px}
+.countdown-scratch.is-revealed{opacity:0;pointer-events:none}
+.countdown-scratch-hint{position:absolute;z-index:6;top:-27px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw;color:#9a7c83;font:400 8px var(--sans);letter-spacing:.14em;text-align:center;text-transform:uppercase;pointer-events:none;transition:opacity .25s ease}
+.countdown-scratch-hint.is-hidden{opacity:0}
+@media(max-width:650px){.countdown-scratch-hint{top:-24px;font-size:7px;letter-spacing:.1em}}
