@@ -13,6 +13,24 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="invitation-preloader" id="invitation-preloader" role="dialog" aria-modal="true" aria-labelledby="invitation-title" aria-describedby="invitation-hint">
+    <button class="invitation-open" id="invitation-open" type="button" aria-label="Open your invitation">
+      <span class="invitation-letter" aria-hidden="true">
+        <span class="invitation-letter__paper">
+          <span class="invitation-letter__eyebrow">A note from the couple</span>
+          <span class="invitation-letter__title">You are<br><i>invited</i></span>
+          <span class="invitation-letter__names">Anchita <b>&amp;</b> Suyash</span>
+          <span class="invitation-letter__date">12 February 2027</span>
+        </span>
+        <span class="invitation-letter__envelope"></span>
+        <span class="invitation-letter__flap"></span>
+        <span class="invitation-letter__seal"><svg viewBox="0 0 32 32" focusable="false"><path d="M16 27s-11-6.8-11-14a6.2 6.2 0 0 1 11-3.9A6.2 6.2 0 0 1 27 13c0 7.2-11 14-11 14Z"/></svg></span>
+      </span>
+      <span class="invitation-open__hint" id="invitation-hint">Tap the seal to open</span>
+    </button>
+    <h1 class="visually-hidden" id="invitation-title">You are invited to Anchita and Suyash's wedding</h1>
+  </div>
+
   <header class="site-header">
     <a class="brand" href="#home" aria-label="Anchita and Suyash, home">
       <svg class="brand-mark" viewBox="0 0 58 48" role="img" aria-label="A and S monogram"><path d="M13 38 26 8l13 30M18 27h16M31 13c8-5 17-2 17 3 0 7-15 5-15 13 0 7 9 9 17 4"/><path class="brand-spark" d="M7 39c5 2 10 2 15 0M38 42c5 2 10 2 15 0"/></svg>
