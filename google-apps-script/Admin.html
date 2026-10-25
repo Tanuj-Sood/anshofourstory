@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ansh of Our Story | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--rose:#92596b;--rose-dark:#754857;--blush:#f8eff0;--pink:#eccbd2;--gold:#c7b27d;--ink:#755d63;--muted:#a58d92;--paper:#fffdfb;--line:#ead9d5;--green:#547966;--red:#a24556;--serif:"Cormorant Garamond",Georgia,serif;--sans:"DM Sans",Arial,sans-serif}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#fbf6f4,#f7ebed 60%,#fcf9f6);color:var(--ink);font:300 14px var(--sans);min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+    .shell{width:min(1100px,calc(100% - 40px));margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;padding:24px 0;border-bottom:1px solid rgba(199,178,125,.35)}.brand{display:flex;align-items:center;gap:12px;color:#a58e6b;font:500 20px var(--serif);letter-spacing:.02em}.brand img{width:42px;height:42px;border-radius:50%;object-fit:cover}.topbar small{display:block;color:var(--muted);font:500 9px var(--sans);letter-spacing:.18em;text-transform:uppercase;margin-top:2px}.topbar button,.quiet-button{border:1px solid var(--line);border-radius:24px;padding:9px 16px;background:rgba(255,255,255,.65);color:var(--rose);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+    .login-wrap{min-height:calc(100vh - 92px);display:grid;place-items:center;padding:38px 0}.login-card,.panel{background:rgba(255,253,251,.86);border:1px solid rgba(199,178,125,.38);border-radius:18px;box-shadow:0 18px 50px rgba(117,72,87,.08)}.login-card{width:min(410px,100%);padding:36px}.eyebrow{margin:0 0 8px;color:#bd9ca3;font-size:9px;letter-spacing:.2em;text-transform:uppercase}.login-card h1,.page-title h1{margin:0;color:var(--rose);font:400 36px/.98 var(--serif)}.login-card>p:not(.eyebrow){color:var(--muted);font:italic 15px var(--serif);margin:12px 0 24px}.field{display:block;margin:0 0 17px;color:#ad8c93;font-size:9px;letter-spacing:.15em;text-transform:uppercase}.field input,.field textarea{display:block;width:100%;margin-top:8px;padding:11px 12px;border:1px solid #e6cfd2;border-radius:8px;background:#fffdfa;color:var(--ink);font:300 13px var(--sans);letter-spacing:0;text-transform:none}.field textarea{min-height:130px;resize:vertical;line-height:1.65}.primary-button{border:0;border-radius:28px;padding:12px 22px;background:linear-gradient(110deg,#e6b5bd,#965a6d);color:white;font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;box-shadow:0 5px 16px rgba(146,89,107,.18)}.primary-button:disabled{opacity:.6;cursor:wait}.login-card .primary-button{width:100%;margin-top:5px}.status{min-height:18px;margin:14px 0 0;text-align:center;color:var(--rose);font-size:11px;line-height:1.5}.status.error{color:var(--red)}
+    #dashboard{padding:38px 0 70px}.page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}.page-title h1{font-size:42px}.page-title p{margin:9px 0 0;color:var(--muted);font:italic 15px var(--serif)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}.stat{padding:17px 19px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.58)}.stat strong{display:block;color:var(--rose);font:500 27px var(--serif)}.stat span{display:block;margin-top:3px;color:var(--muted);font-size:8px;letter-spacing:.15em;text-transform:uppercase}.panel{padding:22px 24px;margin-bottom:22px}.panel-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px}.panel-heading h2{margin:0;color:var(--rose);font:500 25px var(--serif)}.panel-heading p{margin:0;color:var(--muted);font-size:10px}.service-status{padding:9px 12px;border-radius:8px;background:#f5eeeb;color:#9a777d;font-size:10px}.service-status.ready{background:#eef5f0;color:var(--green)}.service-status.needs-setup{background:#fbf0e9;color:#9a6943}
+    .trigger-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.trigger-card{min-height:104px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:16px;border:1px solid #ead9d5;border-radius:12px;background:linear-gradient(140deg,#fffdfa,#f9f0f1);color:var(--rose);text-align:left;transition:transform .2s,box-shadow .2s,border-color .2s}.trigger-card:hover{transform:translateY(-2px);border-color:#d7bac0;box-shadow:0 8px 18px rgba(117,72,87,.08)}.trigger-card strong{font:500 18px var(--serif)}.trigger-card span{color:#ad8c93;font-size:8px;letter-spacing:.15em;text-transform:uppercase}
+    .table-wrap{overflow:auto;border:1px solid #efe2df;border-radius:10px}table{width:100%;border-collapse:collapse;white-space:nowrap;background:rgba(255,255,255,.65)}th,td{padding:11px 12px;border-bottom:1px solid #f0e5e1;text-align:left;font-size:10px}th{background:#faf3f1;color:#a8898e;font-size:8px;letter-spacing:.14em;text-transform:uppercase}td{color:#765f64}tbody tr:last-child td{border-bottom:0}.consent-yes{color:var(--green);font-weight:500}.empty{padding:24px;text-align:center;color:var(--muted);font:italic 14px var(--serif)}
+    dialog{width:min(640px,calc(100% - 28px));max-height:calc(100vh - 36px);padding:0;border:1px solid #ddc5c7;border-radius:16px;background:var(--paper);color:var(--ink);box-shadow:0 25px 90px rgba(56,34,39,.3)}dialog::backdrop{background:rgba(55,37,41,.42);backdrop-filter:blur(3px)}.dialog-body{padding:26px}.dialog-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}.dialog-head h2{margin:0;color:var(--rose);font:500 30px var(--serif)}.dialog-head p{margin:5px 0 0;color:var(--muted);font-size:10px}.close-button{border:0;background:none;color:var(--muted);font-size:22px;line-height:1}.channels{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}.channels label{display:flex;align-items:center;gap:7px;color:#876f75;font-size:11px}.channels input{accent-color:#a5687a}.template-help,.preview{margin:12px 0;padding:12px;border-radius:8px;background:#f8f0ef;color:#967a80;font-size:10px;line-height:1.6}.preview{background:#f7f3e9;color:#8e7950}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.dialog-actions .quiet-button{padding:11px 18px}.dialog-actions .primary-button{min-width:130px}.hidden{display:none!important}
+    @media(max-width:760px){.shell{width:min(100% - 24px,560px)}.topbar{padding:16px 0}.brand{font-size:17px}.brand img{width:36px;height:36px}.stats{grid-template-columns:repeat(2,1fr)}.trigger-grid{grid-template-columns:repeat(2,1fr);gap:8px}.trigger-card{min-height:94px;padding:13px}.trigger-card strong{font-size:16px}.panel{padding:17px 14px}.panel-heading{align-items:flex-start;flex-direction:column}.page-title{align-items:flex-start;flex-direction:column}.page-title h1{font-size:36px}.login-card{padding:27px}.dialog-body{padding:20px}.dialog-actions{flex-direction:column-reverse}.dialog-actions button{width:100%}}
+    @media(max-width:420px){.trigger-grid{grid-template-columns:1fr}.trigger-card{min-height:78px}.stats{gap:8px}.stat{padding:13px}.stat strong{font-size:23px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><img src="https://anshofourstory.com/assets/monogram-logo.png" alt=""><div>Anchita &amp; Suyash<small>Private event desk</small></div></div>
+      <button class="hidden" id="logout-button" type="button">Sign out</button>
+    </header>
+
+    <main id="login-view" class="login-wrap">
+      <form class="login-card" id="login-form">
+        <p class="eyebrow">Private access</p>
+        <h1>Welcome back</h1>
+        <p>Sign in to view responses and send event updates.</p>
+        <label class="field">User ID<input name="userId" autocomplete="username" required></label>
+        <label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="primary-button" type="submit">Sign in</button>
+        <p class="status" id="login-status" aria-live="polite"></p>
+      </form>
+    </main>
+
+    <main id="dashboard" class="hidden">
+      <div class="page-title"><div><p class="eyebrow">Guest list &amp; event updates</p><h1>Admin desk</h1><p>Only guests who opted in appear in this contact list.</p></div></div>
+      <div class="stats">
+        <div class="stat"><strong id="total-opted">0</strong><span>Event updates opt-ins</span></div>
+        <div class="stat"><strong id="email-count">0</strong><span>Contactable by email</span></div>
+        <div class="stat"><strong id="whatsapp-count">0</strong><span>Explicit WhatsApp opt-ins</span></div>
+        <div class="stat"><strong id="email-quota">—</strong><span id="email-sender-label">Email recipients left today</span></div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-heading"><h2>Event triggers</h2><p>Choose a moment, write the update, then review the recipient counts before sending.</p></div>
+        <div class="service-status" id="whatsapp-status">Checking WhatsApp setup…</div>
+        <div class="trigger-grid" id="trigger-grid">
+          <button class="trigger-card" data-trigger="haldi"><strong>Haldi trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="haldi_about_to_start"><strong>Haldi about to start trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="mehndi"><strong>Mehndi trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="mehndi_about_to_start"><strong>Mehndi about to start trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="engagement"><strong>Engagement trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="engagement_about_to_start"><strong>Engagement about to start trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="wedding"><strong>Wedding trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="wedding_about_to_start"><strong>Wedding about to start trigger</strong><span>Compose update →</span></button>
+          <button class="trigger-card" data-trigger="phera_start"><strong>Phera start trigger</strong><span>Compose update →</span></button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading"><h2>Consenting guests</h2><p>WhatsApp is available only where a separate WhatsApp opt-in is recorded.</p></div>
+        <div class="table-wrap"><table><thead><tr><th>Guest</th><th>Attendance</th><th>Email</th><th>Phone</th><th>Event updates</th><th>WhatsApp</th></tr></thead><tbody id="guest-rows"></tbody></table><div class="empty hidden" id="guest-empty">No event-update opt-ins yet.</div></div>
+      </section>
+      <p class="status" id="dashboard-status" aria-live="polite"></p>
+    </main>
+  </div>
+
+  <dialog id="trigger-dialog">
+    <form class="dialog-body" id="trigger-form">
+      <div class="dialog-head"><div><h2 id="trigger-title">Event trigger</h2><p>Use <code>{{name}}</code> in the message to include each guest’s name.</p></div><button class="close-button" id="close-trigger" type="button" aria-label="Close">×</button></div>
+      <fieldset id="trigger-editor"><div class="channels"><label><input type="checkbox" name="sendEmail" checked> Email (<span id="email-target-count">0</span>)</label><label><input type="checkbox" name="sendWhatsApp"> WhatsApp (<span id="whatsapp-target-count">0</span>)</label></div>
+      <label class="field">Email subject<input name="subject" maxlength="180" value="An update from Anchita &amp; Suyash"></label>
+      <label class="field">Message<textarea name="message" maxlength="1800" placeholder="Write the event update here…" required></textarea></label>
+      <label class="field">Map link (optional)<input name="mapUrl" type="url" placeholder="https://maps.google.com/…"></label>
+      <div id="whatsapp-template-fields" class="hidden">
+        <label class="field">Approved WhatsApp template name<input name="whatsappTemplate" pattern="[a-z0-9_]{1,100}"></label>
+        <label class="field">Template language code<input name="whatsappLanguage" maxlength="20" value="en"></label>
+        <p class="template-help">WhatsApp sends an approved template with three body variables: guest name, this message, and map link. Create/approve that template in WhatsApp Manager before sending. The message editor fills the template’s second variable.</p>
+      </div>
+      <p class="preview" id="send-preview">The update will be sent only to guests who gave the matching consent.</p>
+      </fieldset>
+      <section class="preview hidden" id="trigger-review"><strong>Review this update</strong><p id="review-channels"></p><p id="review-subject"></p><p id="review-message"></p><p id="review-map"></p></section>
+      <p class="status" id="trigger-status" aria-live="polite"></p>
+      <div class="dialog-actions"><button class="quiet-button" id="cancel-trigger" type="button">Cancel</button><button class="quiet-button hidden" id="back-to-edit" type="button">Back</button><button class="primary-button" id="send-trigger" type="submit">Review &amp; send</button></div>
+    </form>
+  </dialog>
+
+  <script>
+    const $ = selector => document.querySelector(selector);
+    let sessionToken = '';
+    let dashboardData = { emailCount: 0, whatsappCount: 0, recipients: [] };
+    let currentTrigger = '';
+    let triggerStep = 'edit';
+    const triggerNames = {
+      haldi: 'Haldi trigger', haldi_about_to_start: 'Haldi about to start trigger', mehndi: 'Mehndi trigger',
+      mehndi_about_to_start: 'Mehndi about to start trigger', engagement: 'Engagement trigger',
+      engagement_about_to_start: 'Engagement about to start trigger', wedding: 'Wedding trigger',
+      wedding_about_to_start: 'Wedding about to start trigger', phera_start: 'Phera start trigger'
+    };
+
+    function serverCall(method, ...args) {
+      return new Promise((resolve, reject) => {
+        const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(error => reject(new Error(error.message || 'The request failed.')));
+        runner[method](...args);
+      });
+    }
+    function showStatus(element, message, error) {
+      element.textContent = message || '';
+      element.classList.toggle('error', Boolean(error));
+    }
+    function escapeCell(value) {
+      const cell = document.createElement('td');
+      cell.textContent = value || '—';
+      return cell;
+    }
+    function renderRecipients(data) {
+      dashboardData = data;
+      $('#total-opted').textContent = data.recipients.length;
+      $('#email-count').textContent = data.emailCount;
+      $('#whatsapp-count').textContent = data.whatsappCount;
+      $('#email-quota').textContent = data.emailQuota;
+      $('#email-sender-label').textContent = `Email quota · display name: ${data.emailSenderName}`;
+      const whatsappStatus = $('#whatsapp-status');
+      whatsappStatus.textContent = data.whatsappConfigured
+        ? `WhatsApp Cloud API ready · template: ${data.whatsappTemplate}`
+        : 'WhatsApp Cloud API credentials are not set up yet.';
+      whatsappStatus.className = `service-status ${data.whatsappConfigured ? 'ready' : 'needs-setup'}`;
+      $('#email-quota').title = `Email sender display name: ${data.emailSenderName}`;
+      const rows = $('#guest-rows');
+      rows.replaceChildren();
+      data.recipients.forEach(guest => {
+        const row = document.createElement('tr');
+        row.append(escapeCell(guest.name), escapeCell(guest.attendance), escapeCell(guest.email), escapeCell(guest.phone));
+        const eventConsent = escapeCell('Yes'); eventConsent.className = 'consent-yes';
+        const waConsent = escapeCell(guest.whatsappUpdatesConsent === 'yes' ? 'Yes' : 'No');
+        if (guest.whatsappUpdatesConsent === 'yes') waConsent.className = 'consent-yes';
+        row.append(eventConsent, waConsent);
+        rows.append(row);
+      });
+      $('#guest-empty').classList.toggle('hidden', data.recipients.length > 0);
+      $('#email-target-count').textContent = data.emailCount;
+      $('#whatsapp-target-count').textContent = data.whatsappCount;
+    }
+    async function loadDashboard() {
+      try {
+        const data = await serverCall('adminGetDashboard', sessionToken);
+        renderRecipients(data);
+      } catch (error) {
+        showStatus($('#dashboard-status'), error.message, true);
+        if (/session/i.test(error.message)) signOut(false);
+      }
+    }
+    function signIn() {
+      $('#login-view').classList.add('hidden');
+      $('#dashboard').classList.remove('hidden');
+      $('#logout-button').classList.remove('hidden');
+      loadDashboard();
+    }
+    async function signOut(notifyServer) {
+      const token = sessionToken;
+      sessionToken = '';
+      if (notifyServer && token) { try { await serverCall('adminLogout', token); } catch (_) {} }
+      $('#dashboard').classList.add('hidden');
+      $('#logout-button').classList.add('hidden');
+      $('#login-view').classList.remove('hidden');
+      $('#login-form').reset();
+    }
+
+    $('#login-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      const status = $('#login-status');
+      button.disabled = true;
+      showStatus(status, 'Signing in…');
+      const form = new FormData(event.currentTarget);
+      try {
+        const result = await serverCall('adminLogin', form.get('userId'), form.get('password'));
+        sessionToken = result.token;
+        showStatus(status, '');
+        signIn();
+      } catch (error) {
+        showStatus(status, error.message, true);
+      } finally { button.disabled = false; }
+    });
+    $('#logout-button').addEventListener('click', () => signOut(true));
+    $('#trigger-grid').addEventListener('click', event => {
+      const button = event.target.closest('[data-trigger]');
+      if (!button) return;
+      currentTrigger = button.dataset.trigger;
+      const form = $('#trigger-form');
+      form.reset();
+      triggerStep = 'edit';
+      $('#trigger-editor').style.cssText = 'border:0;margin:0;padding:0;min-width:0';
+      $('#trigger-editor').disabled = false;
+      $('#trigger-editor').classList.remove('hidden');
+      $('#trigger-review').classList.add('hidden');
+      $('#back-to-edit').classList.add('hidden');
+      $('#send-trigger').textContent = 'Review & send';
+      $('#send-trigger').type = 'submit';
+      $('#send-trigger').onclick = null;
+      $('#send-trigger').disabled = false;
+      $('#trigger-title').textContent = triggerNames[currentTrigger];
+      form.elements.subject.value = `${triggerNames[currentTrigger]} | Ansh of Our Story`;
+      form.elements.whatsappTemplate.value = dashboardData.whatsappTemplate || '';
+      form.elements.whatsappLanguage.value = dashboardData.whatsappLanguage || 'en';
+      $('#email-target-count').textContent = dashboardData.emailCount;
+      $('#whatsapp-target-count').textContent = dashboardData.whatsappCount;
+      $('#whatsapp-template-fields').classList.toggle('hidden', !form.elements.sendWhatsApp.checked);
+      showStatus($('#trigger-status'), '');
+      updatePreview();
+      $('#trigger-dialog').showModal();
+    });
+    function updatePreview() {
+      const form = $('#trigger-form');
+      const channels = [];
+      if (form.elements.sendEmail.checked) channels.push(`${dashboardData.emailCount} email opt-ins`);
+      if (form.elements.sendWhatsApp.checked) channels.push(`${dashboardData.whatsappCount} WhatsApp opt-ins`);
+      $('#send-preview').textContent = channels.length ? `Ready to send to ${channels.join(' and ')}. You will confirm before any message is sent.` : 'Choose at least one channel.';
+      $('#whatsapp-template-fields').classList.toggle('hidden', !form.elements.sendWhatsApp.checked);
+    }
+    $('#trigger-form').elements.sendEmail.addEventListener('change', updatePreview);
+    $('#trigger-form').elements.sendWhatsApp.addEventListener('change', updatePreview);
+    $('#cancel-trigger').addEventListener('click', () => $('#trigger-dialog').close());
+    $('#close-trigger').addEventListener('click', () => $('#trigger-dialog').close());
+    $('#back-to-edit').addEventListener('click', () => {
+      triggerStep = 'edit';
+      $('#trigger-editor').classList.remove('hidden');
+      $('#trigger-editor').disabled = false;
+      $('#trigger-review').classList.add('hidden');
+      $('#back-to-edit').classList.add('hidden');
+      $('#send-trigger').textContent = 'Review & send';
+      showStatus($('#trigger-status'), '');
+    });
+    $('#trigger-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const sendEmail = form.elements.sendEmail.checked;
+      const sendWhatsApp = form.elements.sendWhatsApp.checked;
+      if (triggerStep === 'edit') {
+        if (!sendEmail && !sendWhatsApp) { showStatus($('#trigger-status'), 'Choose at least one channel.', true); return; }
+        const channels = [];
+        if (sendEmail) channels.push(`${dashboardData.emailCount} email opt-ins`);
+        if (sendWhatsApp) channels.push(`${dashboardData.whatsappCount} WhatsApp opt-ins`);
+        $('#review-channels').textContent = `This will send ${triggerNames[currentTrigger]} to ${channels.join(' and ')}.`;
+        $('#review-subject').textContent = sendEmail ? `Email subject: ${form.elements.subject.value.trim()}` : 'Email is not selected.';
+        $('#review-message').textContent = `Message: ${form.elements.message.value.trim()}`;
+        $('#review-map').textContent = form.elements.mapUrl.value.trim() ? `Map: ${form.elements.mapUrl.value.trim()}` : 'No map link included.';
+        $('#trigger-editor').classList.add('hidden');
+        $('#trigger-editor').disabled = true;
+        $('#trigger-review').classList.remove('hidden');
+        $('#back-to-edit').classList.remove('hidden');
+        $('#send-trigger').textContent = 'Confirm & send';
+        triggerStep = 'review';
+        showStatus($('#trigger-status'), '');
+        return;
+      }
+      const button = $('#send-trigger');
+      button.disabled = true;
+      showStatus($('#trigger-status'), 'Sending…');
+      const request = {
+        triggerId: currentTrigger,
+        sendEmail,
+        sendWhatsApp,
+        subject: form.elements.subject.value,
+        message: form.elements.message.value,
+        mapUrl: form.elements.mapUrl.value,
+        whatsappTemplate: form.elements.whatsappTemplate.value,
+        whatsappLanguage: form.elements.whatsappLanguage.value
+      };
+      try {
+        const result = await serverCall('adminSendTrigger', sessionToken, request);
+        const sent = [];
+        if (sendEmail) sent.push(`${result.emailSent} emails sent${result.emailFailed ? `, ${result.emailFailed} failed` : ''}`);
+        if (sendWhatsApp) sent.push(`${result.whatsappSent} WhatsApp messages sent${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
+        showStatus($('#trigger-status'), sent.join(' · ') + (result.errors.length ? ` — ${result.errors[0]}` : ''), result.emailFailed + result.whatsappFailed > 0);
+        await loadDashboard();
+        button.textContent = 'Done';
+        button.type = 'button';
+        button.onclick = () => $('#trigger-dialog').close();
+      } catch (error) {
+        showStatus($('#trigger-status'), error.message, true);
+      } finally { button.disabled = false; }
+    });
+
+  </script>
+</body>
+</html>

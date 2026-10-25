@@ -218,10 +218,15 @@
   const contactEmail = document.querySelector('#rsvp-form [name="email"]');
   const contactPhone = document.querySelector('#rsvp-form [name="phone"]');
   const contactRequirement = document.getElementById('contact-requirement');
+  const whatsappConsentFieldset = document.getElementById('whatsapp-consent');
+  const whatsappConsentInputs = [...document.querySelectorAll('#rsvp-form [name="whatsappUpdatesConsent"]')];
   const updateContactRequirement = () => {
     const optedIn = document.querySelector('#rsvp-form [name="eventUpdatesConsent"]:checked')?.value === 'yes';
     contactEmail.required = optedIn;
     contactPhone.required = optedIn;
+    whatsappConsentFieldset.hidden = !optedIn;
+    whatsappConsentInputs.forEach(input => { input.disabled = !optedIn; input.required = optedIn && input.value === 'yes'; });
+    if (!optedIn) document.querySelector('#rsvp-form [name="whatsappUpdatesConsent"][value="no"]').checked = true;
     document.querySelectorAll('#rsvp-form .required-mark').forEach(mark => { mark.hidden = !optedIn; });
     contactRequirement.textContent = optedIn
       ? 'Email and phone are required so we can send you event-day updates.'
@@ -319,6 +324,7 @@
     email: data.get('email'),
     phone: data.get('phone'),
     eventUpdatesConsent: data.get('eventUpdatesConsent'),
+    whatsappUpdatesConsent: data.get('whatsappUpdatesConsent') || 'no',
     message: data.get('message'),
     website: data.get('website')
   }), 'Thank you! Your RSVP has been received.');

@@ -104,13 +104,18 @@
           <label class="radio-label"><input type="radio" name="eventUpdatesConsent" value="yes" required> Yes, please</label>
           <label class="radio-label"><input type="radio" name="eventUpdatesConsent" value="no"> No, thank you</label>
         </fieldset>
+        <fieldset class="updates-consent whatsapp-consent" id="whatsapp-consent" hidden>
+          <legend>May we also send these updates to you on WhatsApp?</legend>
+          <label class="radio-label"><input type="radio" name="whatsappUpdatesConsent" value="yes" disabled required> Yes, please</label>
+          <label class="radio-label"><input type="radio" name="whatsappUpdatesConsent" value="no" disabled> No, thank you</label>
+        </fieldset>
         <p class="contact-requirement" id="contact-requirement">Email and phone are optional unless you opt in to event-day updates.</p>
         <label>Email address <span class="required-mark" aria-hidden="true" hidden>*</span><input type="email" name="email" autocomplete="email" placeholder="your@email.com" maxlength="254"></label>
         <label>Phone number <span class="required-mark" aria-hidden="true" hidden>*</span><input type="tel" name="phone" autocomplete="tel" placeholder="+91 98765 43210" maxlength="30" pattern="[+]?[0-9][0-9 .()-]{5,28}"></label>
         <label class="message-label">Message to the couple<textarea name="message" placeholder="Share your wishes…" rows="2" maxlength="2000"></textarea></label>
         <label class="form-honeypot" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
         <button class="submit-button" type="submit">Send RSVP <span>→</span></button>
-        <p class="form-note">Your contact details will only be used for event-day updates if you opt in <span>♥</span></p>
+        <p class="form-note">WhatsApp messages are sent only if you separately opt in above <span>♥</span></p>
         <p class="form-status" aria-live="polite"></p>
       </form>
     </section>
