@@ -1,4 +1,23 @@
 (() => {
+  const invitation = document.getElementById('invitation-preloader');
+  const invitationButton = document.getElementById('invitation-open');
+  document.body.classList.add('invitation-locked');
+  invitationButton.addEventListener('click', () => {
+    if (invitation.classList.contains('is-opening')) return;
+    invitation.classList.add('is-opening');
+    invitationButton.disabled = true;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.setTimeout(() => {
+      invitation.classList.add('is-departing');
+      window.setTimeout(() => {
+        invitation.classList.add('is-gone');
+        document.body.classList.remove('invitation-locked');
+        invitation.setAttribute('aria-hidden', 'true');
+        window.setTimeout(() => invitation.remove(), 550);
+      }, reducedMotion ? 80 : 900);
+    }, reducedMotion ? 80 : 2800);
+  });
+
   const target = new Date('2027-02-12T11:00:00+05:30').getTime();
   const fields = ['days', 'hours', 'minutes', 'seconds'].map(id => document.getElementById(id));
   const updateCountdown = () => {
