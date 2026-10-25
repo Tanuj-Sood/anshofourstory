@@ -30,22 +30,24 @@
 
   const countdown = document.querySelector('.countdown');
   if (countdown) {
-    const scratchCanvas = document.createElement('canvas');
-    scratchCanvas.className = 'countdown-scratch';
-    scratchCanvas.setAttribute('role', 'button');
-    scratchCanvas.setAttribute('aria-label', 'Scratch across the cards to reveal the wedding countdown. Press Space or Enter to reveal.');
-    scratchCanvas.tabIndex = 0;
     const scratchHint = document.createElement('span');
     scratchHint.className = 'countdown-scratch-hint';
     scratchHint.textContent = 'Scratch across the cards to reveal your countdown';
-    countdown.setAttribute('aria-hidden', 'true');
-    countdown.append(scratchCanvas, scratchHint);
+    const countdownDigits = [...countdown.querySelectorAll('.time-card > span')];
+    countdownDigits.forEach(digit => digit.setAttribute('aria-hidden', 'true'));
+    countdown.append(scratchHint);
 
-    const scratchContext = scratchCanvas.getContext('2d');
-    const scratchedSegments = [];
-    let cardRects = [];
+    const scratchLayers = [...countdown.querySelectorAll('.time-card')].map(card => {
+      const canvas = document.createElement('canvas');
+      canvas.className = 'countdown-scratch';
+      canvas.setAttribute('role', 'button');
+      canvas.setAttribute('aria-label', 'Scratch this card to reveal the wedding countdown. Press Space or Enter to reveal.');
+      canvas.tabIndex = 0;
+      card.append(canvas);
+      return { card, canvas, context: canvas.getContext('2d'), segments: [], previousPoint: null };
+    });
     let pixelRatio = 1;
-    let previousPoint = null;
+    let segmentCount = 0;
     let isRevealed = false;
 
     const roundedRect = (context, x, y, width, height, radius) => {
@@ -53,82 +55,77 @@
       context.roundRect(x, y, width, height, radius);
     };
 
-    const drawScratchCoating = () => {
-      const bounds = countdown.getBoundingClientRect();
+    const drawScratchCoating = layer => {
+      const bounds = layer.card.getBoundingClientRect();
       if (!bounds.width || !bounds.height) return;
       pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      scratchCanvas.width = Math.round(bounds.width * pixelRatio);
-      scratchCanvas.height = Math.round(bounds.height * pixelRatio);
-      scratchCanvas.style.width = `${bounds.width}px`;
-      scratchCanvas.style.height = `${bounds.height}px`;
-      scratchContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      cardRects = [...countdown.querySelectorAll('.time-card')].map(card => {
-        const rect = card.getBoundingClientRect();
-        return { x: rect.left - bounds.left, y: rect.top - bounds.top, width: rect.width, height: rect.height };
-      });
+      layer.canvas.width = Math.round(bounds.width * pixelRatio);
+      layer.canvas.height = Math.round(bounds.height * pixelRatio);
+      layer.canvas.style.width = `${bounds.width}px`;
+      layer.canvas.style.height = `${bounds.height}px`;
+      const context = layer.context;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      const radius = Math.min(13, bounds.width * .14);
+      const gradient = context.createLinearGradient(0, 0, bounds.width, bounds.height);
+      gradient.addColorStop(0, '#f8eef0');
+      gradient.addColorStop(.48, '#e9cbd1');
+      gradient.addColorStop(1, '#d9b1ba');
+      roundedRect(context, 0, 0, bounds.width, bounds.height, radius);
+      context.fillStyle = gradient;
+      context.fill();
+      context.save();
+      roundedRect(context, 0, 0, bounds.width, bounds.height, radius);
+      context.clip();
+      context.strokeStyle = 'rgba(255,255,255,.27)';
+      context.lineWidth = 1;
+      for (let x = -bounds.height; x < bounds.width + bounds.height; x += 9) {
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x + bounds.height, bounds.height);
+        context.stroke();
+      }
+      context.restore();
+      roundedRect(context, .5, .5, bounds.width - 1, bounds.height - 1, radius);
+      context.strokeStyle = 'rgba(199,178,125,.88)';
+      context.lineWidth = 1;
+      context.stroke();
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#9a6d78';
+      context.font = '400 13px Georgia, serif';
+      context.fillText('*', bounds.width / 2, bounds.height / 2 - 20);
+      context.fillStyle = '#815d66';
+      context.font = `500 ${bounds.width < 75 ? 7 : 8}px Arial, sans-serif`;
+      context.fillText('SCRATCH', bounds.width / 2, bounds.height / 2 - 3);
+      context.fillStyle = '#9a6d78';
+      context.font = `400 ${bounds.width < 75 ? 6 : 7}px Arial, sans-serif`;
+      context.fillText('TO REVEAL', bounds.width / 2, bounds.height / 2 + 10);
 
-      cardRects.forEach(rect => {
-        const radius = Math.min(13, rect.width * .14);
-        const gradient = scratchContext.createLinearGradient(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
-        gradient.addColorStop(0, '#f8eef0');
-        gradient.addColorStop(.48, '#e9cbd1');
-        gradient.addColorStop(1, '#d9b1ba');
-        roundedRect(scratchContext, rect.x, rect.y, rect.width, rect.height, radius);
-        scratchContext.fillStyle = gradient;
-        scratchContext.fill();
-        scratchContext.save();
-        roundedRect(scratchContext, rect.x, rect.y, rect.width, rect.height, radius);
-        scratchContext.clip();
-        scratchContext.strokeStyle = 'rgba(255,255,255,.27)';
-        scratchContext.lineWidth = 1;
-        for (let x = rect.x - rect.height; x < rect.x + rect.width + rect.height; x += 9) {
-          scratchContext.beginPath();
-          scratchContext.moveTo(x, rect.y);
-          scratchContext.lineTo(x + rect.height, rect.y + rect.height);
-          scratchContext.stroke();
-        }
-        scratchContext.restore();
-        roundedRect(scratchContext, rect.x + .5, rect.y + .5, rect.width - 1, rect.height - 1, radius);
-        scratchContext.strokeStyle = 'rgba(199,178,125,.88)';
-        scratchContext.lineWidth = 1;
-        scratchContext.stroke();
-
-        scratchContext.textAlign = 'center';
-        scratchContext.textBaseline = 'middle';
-        scratchContext.fillStyle = '#9a6d78';
-        scratchContext.font = '400 13px Georgia, serif';
-        scratchContext.fillText('✦', rect.x + rect.width / 2, rect.y + rect.height / 2 - 20);
-        scratchContext.fillStyle = '#815d66';
-        scratchContext.font = `500 ${rect.width < 75 ? 7 : 8}px Arial, sans-serif`;
-        scratchContext.fillText('SCRATCH', rect.x + rect.width / 2, rect.y + rect.height / 2 - 3);
-        scratchContext.fillStyle = '#9a6d78';
-        scratchContext.font = `400 ${rect.width < 75 ? 6 : 7}px Arial, sans-serif`;
-        scratchContext.fillText('TO REVEAL', rect.x + rect.width / 2, rect.y + rect.height / 2 + 10);
-      });
-
-      if (scratchedSegments.length) {
-        scratchContext.globalCompositeOperation = 'destination-out';
-        scratchContext.lineCap = 'round';
-        scratchContext.lineJoin = 'round';
-        scratchContext.lineWidth = 34;
-        scratchedSegments.forEach(segment => {
-          scratchContext.beginPath();
-          scratchContext.moveTo(segment[0], segment[1]);
-          scratchContext.lineTo(segment[2], segment[3]);
-          scratchContext.stroke();
+      if (layer.segments.length) {
+        context.globalCompositeOperation = 'destination-out';
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.lineWidth = 34;
+        layer.segments.forEach(segment => {
+          context.beginPath();
+          context.moveTo(segment[0], segment[1]);
+          context.lineTo(segment[2], segment[3]);
+          context.stroke();
         });
-        scratchContext.globalCompositeOperation = 'source-over';
+        context.globalCompositeOperation = 'source-over';
       }
     };
 
     const getScratchCoverage = () => {
-      const image = scratchContext.getImageData(0, 0, scratchCanvas.width, scratchCanvas.height).data;
       let sampled = 0;
       let cleared = 0;
-      cardRects.forEach(rect => {
-        for (let y = rect.y + 6; y < rect.y + rect.height - 6; y += 12) {
-          for (let x = rect.x + 6; x < rect.x + rect.width - 6; x += 12) {
-            const index = (Math.floor(y * pixelRatio) * scratchCanvas.width + Math.floor(x * pixelRatio)) * 4 + 3;
+      scratchLayers.forEach(layer => {
+        const width = layer.canvas.width / pixelRatio;
+        const height = layer.canvas.height / pixelRatio;
+        const image = layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height).data;
+        for (let y = 6; y < height - 6; y += 12) {
+          for (let x = 6; x < width - 6; x += 12) {
+            const index = (Math.floor(y * pixelRatio) * layer.canvas.width + Math.floor(x * pixelRatio)) * 4 + 3;
             sampled += 1;
             if (image[index] < 80) cleared += 1;
           }
@@ -140,58 +137,64 @@
     const revealCountdown = () => {
       if (isRevealed) return;
       isRevealed = true;
-      scratchCanvas.classList.add('is-revealed');
-      scratchCanvas.setAttribute('aria-hidden', 'true');
-      scratchCanvas.tabIndex = -1;
+      scratchLayers.forEach(({ canvas }) => {
+        canvas.classList.add('is-revealed');
+        canvas.setAttribute('aria-hidden', 'true');
+        canvas.tabIndex = -1;
+      });
       scratchHint.classList.add('is-hidden');
-      countdown.removeAttribute('aria-hidden');
+      countdownDigits.forEach(digit => digit.removeAttribute('aria-hidden'));
       window.setTimeout(() => {
-        scratchCanvas.remove();
+        scratchLayers.forEach(({ canvas }) => canvas.remove());
         scratchHint.remove();
       }, 650);
     };
 
-    drawScratchCoating();
-    window.addEventListener('resize', drawScratchCoating, { passive: true });
-
-    scratchCanvas.addEventListener('pointerdown', event => {
-      if (isRevealed) return;
-      event.preventDefault();
-      scratchCanvas.setPointerCapture(event.pointerId);
-      const rect = scratchCanvas.getBoundingClientRect();
-      previousPoint = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-    });
-    scratchCanvas.addEventListener('pointermove', event => {
-      if (!previousPoint || isRevealed) return;
-      event.preventDefault();
-      const rect = scratchCanvas.getBoundingClientRect();
-      const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-      const distance = Math.hypot(point.x - previousPoint.x, point.y - previousPoint.y);
-      if (distance < 3) return;
-      scratchContext.globalCompositeOperation = 'destination-out';
-      scratchContext.lineCap = 'round';
-      scratchContext.lineJoin = 'round';
-      scratchContext.lineWidth = 34;
-      scratchContext.beginPath();
-      scratchContext.moveTo(previousPoint.x, previousPoint.y);
-      scratchContext.lineTo(point.x, point.y);
-      scratchContext.stroke();
-      scratchContext.globalCompositeOperation = 'source-over';
-      scratchedSegments.push([previousPoint.x, previousPoint.y, point.x, point.y]);
-      previousPoint = point;
-      if (scratchedSegments.length % 3 === 0 && getScratchCoverage() >= .55) revealCountdown();
-    });
-    const stopScratching = () => { previousPoint = null; };
-    scratchCanvas.addEventListener('pointerup', stopScratching);
-    scratchCanvas.addEventListener('pointercancel', stopScratching);
-    scratchCanvas.addEventListener('keydown', event => {
-      if (!isRevealed && (event.code === 'Space' || event.code === 'Enter')) {
+    scratchLayers.forEach(layer => {
+      drawScratchCoating(layer);
+      layer.canvas.addEventListener('pointerdown', event => {
+        if (isRevealed) return;
         event.preventDefault();
-        revealCountdown();
-      }
+        layer.canvas.setPointerCapture(event.pointerId);
+        const rect = layer.canvas.getBoundingClientRect();
+        layer.previousPoint = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      });
+      layer.canvas.addEventListener('pointermove', event => {
+        if (!layer.previousPoint || isRevealed) return;
+        event.preventDefault();
+        const rect = layer.canvas.getBoundingClientRect();
+        const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        const distance = Math.hypot(point.x - layer.previousPoint.x, point.y - layer.previousPoint.y);
+        if (distance < 3) return;
+        const context = layer.context;
+        context.globalCompositeOperation = 'destination-out';
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.lineWidth = 34;
+        context.beginPath();
+        context.moveTo(layer.previousPoint.x, layer.previousPoint.y);
+        context.lineTo(point.x, point.y);
+        context.stroke();
+        context.globalCompositeOperation = 'source-over';
+        layer.segments.push([layer.previousPoint.x, layer.previousPoint.y, point.x, point.y]);
+        layer.previousPoint = point;
+        segmentCount += 1;
+        if (segmentCount % 3 === 0 && getScratchCoverage() >= .55) revealCountdown();
+      });
+      const stopScratching = () => { layer.previousPoint = null; };
+      layer.canvas.addEventListener('pointerup', stopScratching);
+      layer.canvas.addEventListener('pointercancel', stopScratching);
+      layer.canvas.addEventListener('keydown', event => {
+        if (!isRevealed && (event.code === 'Space' || event.code === 'Enter')) {
+          event.preventDefault();
+          revealCountdown();
+        }
+      });
     });
+    window.addEventListener('resize', () => {
+      if (!isRevealed) scratchLayers.forEach(drawScratchCoating);
+    }, { passive: true });
   }
-
   const petalField = document.querySelector('.petals');
   for (let i = 0; i < 22; i += 1) {
     const petal = document.createElement('i');

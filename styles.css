@@ -34,3 +34,4 @@ body.invitation-locked{overflow:hidden}
 .countdown-scratch-hint{position:absolute;z-index:6;top:-27px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw;color:#9a7c83;font:400 8px var(--sans);letter-spacing:.14em;text-align:center;text-transform:uppercase;pointer-events:none;transition:opacity .25s ease}
 .countdown-scratch-hint.is-hidden{opacity:0}
 @media(max-width:650px){.countdown-scratch-hint{top:-24px;font-size:7px;letter-spacing:.1em}}
+.time-card>.countdown-scratch{left:-1px;top:-1px;right:auto;bottom:auto}
