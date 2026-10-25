@@ -35,3 +35,11 @@ body.invitation-locked{overflow:hidden}
 .countdown-scratch-hint.is-hidden{opacity:0}
 @media(max-width:650px){.countdown-scratch-hint{top:-24px;font-size:7px;letter-spacing:.1em}}
 .time-card>.countdown-scratch{left:-1px;top:-1px;right:auto;bottom:auto}
+.contact-requirement{margin:-7px 0 15px;color:#a58b90;font:italic 10px/1.5 var(--serif);text-align:center}
+.required-mark{color:#bf7281;font-size:11px}
+.rsvp form>label small{display:block;margin:5px 0 2px;color:#a58b90;font:italic 11px var(--serif);letter-spacing:0;text-transform:none}
+.form-honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+.submit-button:disabled{opacity:.6;cursor:wait;transform:none}
+.form-status{line-height:1.5}
+.sheets-response-frame{position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+.sheets-response-transport{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
