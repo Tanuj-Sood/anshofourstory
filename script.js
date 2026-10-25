@@ -42,13 +42,6 @@
     petalField.appendChild(petal);
   }
 
-  const banner = document.getElementById('cookie-banner');
-  if (localStorage.getItem('wedding-cookie-choice')) banner.classList.add('hidden');
-  banner.querySelectorAll('[data-cookie]').forEach(button => button.addEventListener('click', () => {
-    localStorage.setItem('wedding-cookie-choice', button.dataset.cookie);
-    banner.classList.add('hidden');
-  }));
-
   const header = document.querySelector('.site-header');
   const setHeader = () => header.classList.toggle('scrolled', window.scrollY > 24);
   window.addEventListener('scroll', setHeader, { passive: true });
