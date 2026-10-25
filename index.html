@@ -95,16 +95,38 @@
       <h2>Will you join us?</h2>
       <p class="section-intro">We'd be delighted to have you celebrate with us.</p>
       <form id="rsvp-form">
-        <label>Your full name<input name="name" autocomplete="name" placeholder="Full name" required></label>
-        <label>Email address<input type="email" name="email" autocomplete="email" placeholder="your@email.com" required></label>
+        <label>Your full name<input name="name" autocomplete="name" placeholder="Full name" maxlength="120" required></label>
         <fieldset><legend>Will you be attending?</legend>
-          <label class="radio-label"><input type="radio" name="attendance" value="Joyfully accepts" required> Joyfully accepts</label>
-          <label class="radio-label"><input type="radio" name="attendance" value="Regretfully declines"> Regretfully declines</label>
+          <label class="radio-label"><input type="radio" name="attendance" value="Accepts" required> Joyfully accepts</label>
+          <label class="radio-label"><input type="radio" name="attendance" value="Declines"> Regretfully declines</label>
         </fieldset>
-        <label>Number of guests<input name="guests" type="number" min="1" max="10" value="1" required></label>
-        <label class="message-label">Message to the couple<textarea name="message" placeholder="Share your wishes…" rows="2"></textarea></label>
+        <fieldset class="updates-consent"><legend>May we send you updates on the event days?</legend>
+          <label class="radio-label"><input type="radio" name="eventUpdatesConsent" value="yes" required> Yes, please</label>
+          <label class="radio-label"><input type="radio" name="eventUpdatesConsent" value="no"> No, thank you</label>
+        </fieldset>
+        <p class="contact-requirement" id="contact-requirement">Email and phone are optional unless you opt in to event-day updates.</p>
+        <label>Email address <span class="required-mark" aria-hidden="true" hidden>*</span><input type="email" name="email" autocomplete="email" placeholder="your@email.com" maxlength="254"></label>
+        <label>Phone number <span class="required-mark" aria-hidden="true" hidden>*</span><input type="tel" name="phone" autocomplete="tel" placeholder="+91 98765 43210" maxlength="30" pattern="[+]?[0-9][0-9 .()-]{5,28}"></label>
+        <label class="message-label">Message to the couple<textarea name="message" placeholder="Share your wishes…" rows="2" maxlength="2000"></textarea></label>
+        <label class="form-honeypot" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
         <button class="submit-button" type="submit">Send RSVP <span>→</span></button>
-        <p class="form-note">We'll be in touch with more details closer to the date <span>♥</span></p>
+        <p class="form-note">Your contact details will only be used for event-day updates if you opt in <span>♥</span></p>
+        <p class="form-status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <div class="ornament" aria-hidden="true"><span></span><b>✦</b><i>·</i><b>✦</b><span></span></div>
+
+    <section class="section rsvp guest-notes" id="guest-notes">
+      <p class="eyebrow">leave a little love</p>
+      <h2>Words for Forever</h2>
+      <p class="section-intro">Share a wish, a memory, or a little advice for married life.</p>
+      <form id="guest-notes-form">
+        <label>Your name<input name="name" autocomplete="name" placeholder="Full name" maxlength="120" required></label>
+        <label class="message-label">Leave us a note <small>Share a wish or memory</small><textarea name="wishOrMemory" placeholder="A wish or memory for the couple…" rows="3" maxlength="2000"></textarea></label>
+        <label class="message-label">Advice for married life <textarea name="marriedLifeAdvice" placeholder="Words for their life together…" rows="3" maxlength="2000"></textarea></label>
+        <label class="form-honeypot" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+        <button class="submit-button" type="submit">Share your words <span>→</span></button>
         <p class="form-status" aria-live="polite"></p>
       </form>
     </section>

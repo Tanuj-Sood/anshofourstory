@@ -1,4 +1,5 @@
 (() => {
+  const SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyoeRyjp3fwyiSUPhMU4YcDRXo6SamagXn7HryZCHW05ZkfQKTCyHmnVATpQEIkNSgJ6Q/exec';
   const invitation = document.getElementById('invitation-preloader');
   const invitationButton = document.getElementById('invitation-open');
   document.body.classList.add('invitation-locked');
@@ -214,15 +215,126 @@
   window.addEventListener('scroll', setHeader, { passive: true });
   setHeader();
 
-  document.getElementById('rsvp-form').addEventListener('submit', event => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const status = document.querySelector('.form-status');
-    status.textContent = `Thank you, ${data.get('name')} — your RSVP has been noted.`;
-    event.currentTarget.reset();
-    event.currentTarget.querySelector('[name="guests"]').value = '1';
+  const contactEmail = document.querySelector('#rsvp-form [name="email"]');
+  const contactPhone = document.querySelector('#rsvp-form [name="phone"]');
+  const contactRequirement = document.getElementById('contact-requirement');
+  const updateContactRequirement = () => {
+    const optedIn = document.querySelector('#rsvp-form [name="eventUpdatesConsent"]:checked')?.value === 'yes';
+    contactEmail.required = optedIn;
+    contactPhone.required = optedIn;
+    document.querySelectorAll('#rsvp-form .required-mark').forEach(mark => { mark.hidden = !optedIn; });
+    contactRequirement.textContent = optedIn
+      ? 'Email and phone are required so we can send you event-day updates.'
+      : 'Email and phone are optional unless you opt in to event-day updates.';
+  };
+  document.querySelectorAll('#rsvp-form [name="eventUpdatesConsent"]').forEach(input => input.addEventListener('change', updateContactRequirement));
+  updateContactRequirement();
+
+  const sendToSheets = payload => new Promise((resolve, reject) => {
+    if (!SHEETS_WEB_APP_URL.startsWith('https://script.google.com/macros/s/') || !SHEETS_WEB_APP_URL.endsWith('/exec')) {
+      reject(new Error('The Google Sheets endpoint has not been configured yet.'));
+      return;
+    }
+
+    const requestId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const frame = document.createElement('iframe');
+    frame.name = `sheets-response-${requestId}`;
+    frame.title = 'Form submission response';
+    frame.className = 'sheets-response-frame';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.setAttribute('sandbox', 'allow-forms allow-scripts allow-same-origin');
+    const transport = document.createElement('form');
+    transport.method = 'post';
+    transport.action = SHEETS_WEB_APP_URL;
+    transport.target = frame.name;
+    transport.className = 'sheets-response-transport';
+    const payloadField = document.createElement('input');
+    payloadField.type = 'hidden';
+    payloadField.name = 'payload';
+    payloadField.value = JSON.stringify({ ...payload, requestId });
+    transport.append(payloadField);
+    let timeout;
+    let requestSubmitted = false;
+    const cleanup = () => {
+      window.removeEventListener('message', onMessage);
+      frame.removeEventListener('load', onFrameLoad);
+      window.clearTimeout(timeout);
+      frame.remove();
+      transport.remove();
+    };
+    const onMessage = message => {
+      if (message.source !== frame.contentWindow || message.data?.source !== 'wedding-sheets' || message.data?.requestId !== requestId) return;
+      cleanup();
+      if (message.data.ok) resolve();
+      else reject(new Error(message.data.message || 'We could not save your response. Please try again.'));
+    };
+    const onFrameLoad = () => {
+      if (!requestSubmitted) {
+        requestSubmitted = true;
+        transport.submit();
+        return;
+      }
+      cleanup();
+      resolve();
+    };
+    frame.addEventListener('load', onFrameLoad);
+    window.addEventListener('message', onMessage);
+    timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('The submission timed out. Please check your connection and try again.'));
+    }, 20000);
+    frame.src = 'about:blank';
+    document.body.append(frame, transport);
   });
 
+  const attachSheetForm = (form, makePayload, successMessage) => {
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const status = form.querySelector('.form-status');
+      const button = form.querySelector('[type="submit"]');
+      const payload = makePayload(new FormData(form));
+      if (payload.error) {
+        status.textContent = payload.error;
+        return;
+      }
+      button.disabled = true;
+      status.textContent = 'Sending…';
+      try {
+        await sendToSheets(payload);
+        status.textContent = successMessage;
+        form.reset();
+        if (form.id === 'rsvp-form') updateContactRequirement();
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  };
+
+  attachSheetForm(document.getElementById('rsvp-form'), data => ({
+    type: 'rsvp',
+    name: data.get('name'),
+    attendance: data.get('attendance'),
+    email: data.get('email'),
+    phone: data.get('phone'),
+    eventUpdatesConsent: data.get('eventUpdatesConsent'),
+    message: data.get('message'),
+    website: data.get('website')
+  }), 'Thank you! Your RSVP has been received.');
+
+  attachSheetForm(document.getElementById('guest-notes-form'), data => {
+    const wishOrMemory = String(data.get('wishOrMemory') || '').trim();
+    const marriedLifeAdvice = String(data.get('marriedLifeAdvice') || '').trim();
+    if (!wishOrMemory && !marriedLifeAdvice) return { error: 'Please share a wish, memory, or a little advice before sending.' };
+    return {
+      type: 'guest_note',
+      name: data.get('name'),
+      wishOrMemory,
+      marriedLifeAdvice,
+      website: data.get('website')
+    };
+  }, 'Thank you for sharing your words with us.');
   document.getElementById('copy-link').addEventListener('click', async event => {
     const button = event.currentTarget;
     try {
