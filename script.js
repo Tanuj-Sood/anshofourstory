@@ -215,6 +215,22 @@
   window.addEventListener('scroll', setHeader, { passive: true });
   setHeader();
 
+  const scrollRevealElements = document.querySelectorAll('.scroll-reveal');
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        revealObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.16 });
+    scrollRevealElements.forEach(element => revealObserver.observe(element));
+  } else {
+    scrollRevealElements.forEach(element => element.classList.add('is-visible'));
+  }
+
+  const rsvpForm = document.getElementById('rsvp-form');
+  if (rsvpForm) {
   const contactEmail = document.querySelector('#rsvp-form [name="email"]');
   const contactPhone = document.querySelector('#rsvp-form [name="phone"]');
   const contactRequirement = document.getElementById('contact-requirement');
@@ -341,7 +357,9 @@
       website: data.get('website')
     };
   }, 'Thank you for sharing your words with us.');
-  document.getElementById('copy-link').addEventListener('click', async event => {
+  }
+  const copyLinkButton = document.getElementById('copy-link');
+  if (copyLinkButton) copyLinkButton.addEventListener('click', async event => {
     const button = event.currentTarget;
     try {
       await navigator.clipboard.writeText(window.location.href);
