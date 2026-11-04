@@ -45,7 +45,6 @@ body.invitation-locked{overflow:hidden}
 .sheets-response-transport{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
 
 /* Standalone wardrobe guide page */
-.planner-audio{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none}
 .planner-page .wardrobe-petals{position:fixed;z-index:1;inset:0;overflow:hidden;pointer-events:none}
 .planner-page .petal{z-index:1}
 .planner-page .hero-content{z-index:2}
