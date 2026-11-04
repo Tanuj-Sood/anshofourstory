@@ -43,3 +43,23 @@ body.invitation-locked{overflow:hidden}
 .form-status{line-height:1.5}
 .sheets-response-frame{position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
 .sheets-response-transport{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+
+/* Standalone wardrobe guide page */
+.planner-page .wardrobe-petals{position:fixed;z-index:1;inset:0;overflow:hidden;pointer-events:none}
+.planner-page .petal{z-index:1}
+.planner-page .hero-content{z-index:2}
+.wardrobe-planner{position:relative;isolation:isolate;min-height:100vh;overflow:hidden;padding:42px 20px 54px;background:linear-gradient(180deg,#fbf5f3 0%,#f8eff0 52%,#fbf6f2 100%)}
+.wardrobe-content{position:relative;z-index:2;width:min(900px,100%);margin:0 auto;text-align:center}
+.wardrobe-planner .ornament{margin:0 auto 22px}
+.wardrobe-planner .eyebrow{margin:0 0 8px;color:#b58f85}
+.wardrobe-planner h2{margin:0 0 9px;color:var(--rose);font:400 clamp(36px,5vw,52px)/1.05 var(--serif)}
+.wardrobe-planner .section-intro{font-size:15px;line-height:1.6;color:#9f8180}
+.wardrobe-art{width:min(780px,100%);margin:32px auto 0;padding:10px 10px 0;border:1px solid rgba(199,178,125,.58);border-radius:14px;background:rgba(255,255,255,.68);box-shadow:0 16px 48px rgba(117,72,87,.11);overflow:hidden}
+.wardrobe-art img{display:block;width:100%;height:auto;border-radius:8px}
+.wardrobe-art figcaption{padding:13px 8px 14px;color:#9a7780;font:italic 16px var(--serif)}
+.wardrobe-art figcaption span{padding-left:5px;color:#d18491}
+.scroll-reveal{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.65,.3,1)}
+.scroll-reveal.is-visible{opacity:1;transform:translateY(0)}
+.wardrobe-art.scroll-reveal{transition-delay:.12s}
+@media(max-width:650px){.wardrobe-planner{min-height:auto;padding:30px 14px 35px}.wardrobe-planner .ornament{margin-bottom:14px}.wardrobe-planner .section-intro{font-size:13px}.desktop-break{display:none}.wardrobe-art{margin-top:24px;padding:6px 6px 0;border-radius:10px}.wardrobe-art figcaption{padding:10px 5px 12px;font-size:14px}}
+@media(prefers-reduced-motion:reduce){.scroll-reveal{opacity:1;transform:none;transition:none}}
