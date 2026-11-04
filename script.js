@@ -2,14 +2,35 @@
   const SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyoeRyjp3fwyiSUPhMU4YcDRXo6SamagXn7HryZCHW05ZkfQKTCyHmnVATpQEIkNSgJ6Q/exec';
   const invitation = document.getElementById('invitation-preloader');
   const invitationButton = document.getElementById('invitation-open');
+  const plannerAudio = document.getElementById('planner-audio');
   document.body.classList.add('invitation-locked');
   invitationButton.addEventListener('click', () => {
     if (invitation.classList.contains('is-opening')) return;
+    let plannerAudioStarted = Promise.resolve(false);
+    if (plannerAudio) {
+      plannerAudio.volume = 0;
+      const playback = plannerAudio.play();
+      plannerAudioStarted = playback
+        ? playback.then(() => true).catch(() => false)
+        : Promise.resolve(!plannerAudio.paused);
+    }
     invitation.classList.add('is-opening');
     invitationButton.disabled = true;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.setTimeout(() => {
       invitation.classList.add('is-departing');
+      plannerAudioStarted.then(isPlaying => {
+        if (!isPlaying || !plannerAudio) return;
+        plannerAudio.currentTime = 0;
+        const fadeDuration = reducedMotion ? 120 : 850;
+        const fadeStarted = performance.now();
+        const fadeIn = now => {
+          const progress = Math.min((now - fadeStarted) / fadeDuration, 1);
+          plannerAudio.volume = 0.58 * progress;
+          if (progress < 1) window.requestAnimationFrame(fadeIn);
+        };
+        window.requestAnimationFrame(fadeIn);
+      });
       window.setTimeout(() => {
         invitation.classList.add('is-gone');
         document.body.classList.remove('invitation-locked');
