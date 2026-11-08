@@ -1,6 +1,6 @@
 # Private event admin setup
 
-The site now has an `/admin/` page with server-side sign-in, a private RSVP view, and nine event-trigger buttons. Each button opens an editor for the email subject, message, and map link. Messages can include `{{name}}` to personalize the guest greeting.
+The site now has an `/admin/` page with server-side sign-in, a private RSVP view, nine event-update triggers, and a signup thank-you trigger. Event buttons open an editor prefilled with the email subject, message, and map link. Messages can include `{{name}}` to personalize the guest greeting.
 
 The page itself is public static content, so hiding the URL is not its security. The password check, session token, sheet reads, and send actions run in Apps Script; no password, Google credential, or WhatsApp token is stored in the website files. The admin functions require a short-lived server session.
 
@@ -30,6 +30,8 @@ Set these in Apps Script project settings, never in `Admin.html`, `script.js`, o
 | `WA_API_VERSION` | Current Graph API version from Meta, in the form `vXX.0` |
 | `WA_TEMPLATE_NAME` | Optional default approved template name; defaults to `wedding_event_update` |
 | `WA_TEMPLATE_LANGUAGE` | Optional template language; defaults to `en` |
+| `WA_SIGNUP_TEMPLATE_NAME` | Optional approved one-variable signup thank-you template; defaults to `event_updates_signup_thanks` |
+| `WA_SIGNUP_TEMPLATE_LANGUAGE` | Optional language for the signup template; defaults to `en` |
 
 The website login form contains no fixed user ID or password. Script Properties are private to the Apps Script project, so restrict project editor access to trusted administrators. Do not send the WhatsApp token or any account password in chat or commit it to Git.
 
@@ -53,4 +55,18 @@ For example, a template could read: `Hello {{1}}, an event-day update from Anchi
 
 The RSVP form now asks for WhatsApp permission separately from general event updates. Only rows with both `Event Updates Consent = Yes` and `WhatsApp Updates Consent = Yes` are eligible for WhatsApp triggers. Older rows have no separate WhatsApp permission and will be treated as **not opted in**. The RSVP script adds the new `WhatsApp Updates Consent` column to the existing header row on the next submission.
 
-The nine trigger buttons do not send a message immediately. Each opens a review form, shows the eligible recipient counts, and asks for confirmation before sending. Email goes only to event-update opt-ins with an email address; WhatsApp goes only to explicit WhatsApp opt-ins with a phone number.
+The nine event trigger buttons open a prefilled review form, show eligible recipient counts, and ask for confirmation before sending. Email goes only to event-update opt-ins with an email address; event WhatsApp updates go only to explicit WhatsApp opt-ins with a phone number.
+
+## Event message and map presets
+
+The event button defaults are in `google-apps-script/Admin.html`, inside the `eventPresets` object. Each event has a `subject`, `message`, and `mapUrl`. Paste the relevant Google Maps share link between the quotes for that event's `mapUrl`, for example `mapUrl: 'https://maps.app.goo.gl/your-link'`. Leave it as an empty string until you have the link. Then copy the updated `Admin.html` into Apps Script and deploy a new version. The message and map link remain editable in the review form before sending.
+
+## Signup thank-you trigger
+
+The extra **Signup thank-you** button sends WhatsApp only to new rows with both event-update and WhatsApp consent, a phone number, and `Signup WhatsApp Status = Pending`. The Apps Script adds this status column when the admin dashboard first loads after deployment. Existing rows are marked `Existing`; new WhatsApp opt-ins are marked `Pending`; successful sends become `Sent` with a timestamp; failed sends return to `Pending`. Repeated clicks therefore target pending new signups and any failed sends, not rows already marked sent.
+
+In WhatsApp Manager, create and get approval for a separate one-variable utility template named `event_updates_signup_thanks`. Use this body, with `{{1}}` as the guest name:
+
+`Hi {{1}}, thank you for signing up for event-day updates from Ansh of Our Story. We will send you helpful alerts during the celebration days. We cannot wait to celebrate with you!`
+
+Set `WA_SIGNUP_TEMPLATE_NAME` and `WA_SIGNUP_TEMPLATE_LANGUAGE` in Apps Script Script Properties if your approved template uses a different name or language code. The default name is `event_updates_signup_thanks`, and the default language is `en`. The signup trigger will not send until WhatsApp credentials and this approved template are configured.

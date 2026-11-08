@@ -1,7 +1,7 @@
 ﻿const SHEETS = {
   rsvps: {
     id: '1wOSEpNrRdV0c2RVRKM47PnAjaVA_h8kvyqAroapEHCE',
-    headers: ['Submitted At', 'Guest Name', 'Attendance', 'Email', 'Phone', 'Event Updates Consent', 'Message to the Couple', 'WhatsApp Updates Consent']
+    headers: ['Submitted At', 'Guest Name', 'Attendance', 'Email', 'Phone', 'Event Updates Consent', 'Message to the Couple', 'WhatsApp Updates Consent', 'Signup WhatsApp Status']
   },
   notes: {
     id: '1H2JMa6ofAOakaVlTGCgX8v2IFcwgMoLgX_lh9xLvTZ8',
@@ -64,6 +64,7 @@ function saveRsvp(payload) {
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address.');
   if (phone && !/^\+?[0-9][0-9\s().-]{5,28}$/.test(phone)) throw new Error('Enter a valid phone number.');
 
+  ensureSignupTrackingColumn();
   appendRow(SHEETS.rsvps, {
     'Submitted At': new Date(),
     'Guest Name': name,
@@ -72,7 +73,8 @@ function saveRsvp(payload) {
     'Phone': phone,
     'Event Updates Consent': consent === 'yes' ? 'Yes' : 'No',
     'Message to the Couple': message,
-    'WhatsApp Updates Consent': whatsappConsent === 'yes' ? 'Yes' : 'No'
+    'WhatsApp Updates Consent': whatsappConsent === 'yes' ? 'Yes' : 'No',
+    'Signup WhatsApp Status': whatsappConsent === 'yes' ? 'Pending' : 'Not opted in'
   });
 }
 
@@ -123,6 +125,45 @@ function appendRow(destination, record) {
   }
 }
 
+function ensureSignupTrackingColumn() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = SpreadsheetApp.openById(SHEETS.rsvps.id).getSheets()[0];
+    const lastRow = sheet.getLastRow();
+    if (lastRow === 0) {
+      sheet.getRange(1, 1, 1, SHEETS.rsvps.headers.length).setValues([SHEETS.rsvps.headers]);
+      return;
+    }
+
+    let lastColumn = sheet.getLastColumn();
+    let headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(value => String(value).trim());
+    const missingHeaders = SHEETS.rsvps.headers.filter(header => headers.indexOf(header) === -1);
+    if (missingHeaders.length) {
+      sheet.getRange(1, lastColumn + 1, 1, missingHeaders.length).setValues([missingHeaders]);
+      headers = headers.concat(missingHeaders);
+      lastColumn += missingHeaders.length;
+    }
+
+    const statusColumn = headers.indexOf('Signup WhatsApp Status') + 1;
+    if (lastRow > 1) {
+      const statusRange = sheet.getRange(2, statusColumn, lastRow - 1, 1);
+      const statuses = statusRange.getDisplayValues();
+      let changed = false;
+      statuses.forEach(row => {
+        if (!String(row[0] || '').trim()) {
+          row[0] = 'Existing';
+          changed = true;
+        }
+      });
+      if (changed) statusRange.setValues(statuses);
+    }
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function adminLogin(userId, password) {
   const properties = PropertiesService.getScriptProperties();
   const expectedUser = properties.getProperty('ADMIN_USER_ID');
@@ -141,16 +182,20 @@ function adminLogout(token) {
 
 function adminGetDashboard(token) {
   requireAdmin(token);
+  ensureSignupTrackingColumn();
   const recipients = readOptedInRecipients();
   const properties = PropertiesService.getScriptProperties();
   return {
     recipients: recipients,
     emailCount: recipients.filter(record => record.email).length,
     whatsappCount: recipients.filter(record => record.whatsappUpdatesConsent === 'yes' && record.phone).length,
+    signupWhatsAppCount: recipients.filter(record => record.whatsappUpdatesConsent === 'yes' && record.phone && isSignupPending(record.signupWhatsAppStatus)).length,
     emailQuota: MailApp.getRemainingDailyQuota(),
     whatsappConfigured: Boolean(properties.getProperty('WA_ACCESS_TOKEN') && properties.getProperty('WA_PHONE_NUMBER_ID') && properties.getProperty('WA_API_VERSION')),
     whatsappTemplate: properties.getProperty('WA_TEMPLATE_NAME') || 'wedding_event_update',
     whatsappLanguage: properties.getProperty('WA_TEMPLATE_LANGUAGE') || 'en',
+    signupTemplate: properties.getProperty('WA_SIGNUP_TEMPLATE_NAME') || 'event_updates_signup_thanks',
+    signupLanguage: properties.getProperty('WA_SIGNUP_TEMPLATE_LANGUAGE') || 'en',
     emailSenderName: properties.getProperty('EMAIL_SENDER_NAME') || 'Anchita & Suyash'
   };
 }
@@ -207,6 +252,81 @@ function adminSendTrigger(token, request) {
   return result;
 }
 
+function adminSendSignupTrigger(token, request) {
+  requireAdmin(token);
+  request = request || {};
+  ensureSignupTrackingColumn();
+  const properties = PropertiesService.getScriptProperties();
+  const templateName = cleanText(request.templateName || properties.getProperty('WA_SIGNUP_TEMPLATE_NAME') || 'event_updates_signup_thanks', 100, 'Signup WhatsApp template', true);
+  const language = cleanText(request.language || properties.getProperty('WA_SIGNUP_TEMPLATE_LANGUAGE') || 'en', 20, 'Signup WhatsApp template language', true);
+  if (!properties.getProperty('WA_ACCESS_TOKEN') || !properties.getProperty('WA_PHONE_NUMBER_ID') || !properties.getProperty('WA_API_VERSION')) {
+    throw new Error('WhatsApp Cloud API credentials are not configured.');
+  }
+  if (!/^[a-z0-9_]{1,100}$/.test(templateName)) throw new Error('WhatsApp template names use lowercase letters, numbers, and underscores.');
+
+  const sheet = SpreadsheetApp.openById(SHEETS.rsvps.id).getSheets()[0];
+  const lock = LockService.getScriptLock();
+  const claimed = [];
+  let trackingColumn = 0;
+  lock.waitLock(10000);
+  try {
+    const values = sheet.getDataRange().getDisplayValues();
+    if (values.length < 2) return { whatsappSent: 0, whatsappFailed: 0, pendingCount: 0, errors: [] };
+    const headers = values[0].map(value => String(value).trim().toLowerCase());
+    const column = name => headers.indexOf(name.toLowerCase());
+    const statusColumn = column('Signup WhatsApp Status');
+    if (statusColumn < 0) throw new Error('The signup tracking column is missing from the RSVP sheet.');
+    trackingColumn = statusColumn + 1;
+    const eventConsentColumn = column('Event Updates Consent');
+    const whatsappConsentColumn = column('WhatsApp Updates Consent');
+    const nameColumn = column('Guest Name');
+    const phoneColumn = column('Phone');
+    const claimTime = Date.now();
+    values.slice(1).forEach((row, offset) => {
+      const eligible = String(row[eventConsentColumn] || '').trim().toLowerCase() === 'yes'
+        && String(row[whatsappConsentColumn] || '').trim().toLowerCase() === 'yes'
+        && String(row[phoneColumn] || '').trim();
+      if (!eligible || !isSignupPending(row[statusColumn])) return;
+      const rowNumber = offset + 2;
+      sheet.getRange(rowNumber, statusColumn + 1).setValue('Sending|' + claimTime);
+      claimed.push({ rowNumber, name: String(row[nameColumn] || '').trim(), phone: String(row[phoneColumn] || '').trim() });
+    });
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+
+  const result = { whatsappSent: 0, whatsappFailed: 0, pendingCount: 0, errors: [] };
+  claimed.forEach(record => {
+    try {
+      sendWhatsAppSignupTemplate(record, templateName, language);
+      result.whatsappSent += 1;
+      try {
+        sheet.getRange(record.rowNumber, trackingColumn).setValue('Sent|' + new Date().toISOString());
+      } catch (statusError) {
+        if (result.errors.length < 3) result.errors.push('A message was sent, but its sent status could not be saved.');
+      }
+    } catch (error) {
+      result.whatsappFailed += 1;
+      try {
+        sheet.getRange(record.rowNumber, trackingColumn).setValue('Pending');
+      } catch (statusError) {
+        if (result.errors.length < 3) result.errors.push('A failed message could not be returned to the pending list.');
+      }
+      if (result.errors.length < 3) result.errors.push('A signup WhatsApp message failed. Check the approved template and recipient number.');
+    }
+  });
+  result.pendingCount = readOptedInRecipients().filter(record => record.whatsappUpdatesConsent === 'yes' && record.phone && isSignupPending(record.signupWhatsAppStatus)).length;
+  return result;
+}
+
+function isSignupPending(status) {
+  const value = String(status || '').trim();
+  if (value.toLowerCase() === 'pending') return true;
+  const match = value.match(/^Sending\|(\d+)$/i);
+  return Boolean(match && Date.now() - Number(match[1]) > 20 * 60 * 1000);
+}
+
 function requireAdmin(token) {
   if (!token || CacheService.getScriptCache().get('admin-session:' + String(token)) !== 'valid') throw new Error('Your admin session expired. Please sign in again.');
 }
@@ -228,7 +348,8 @@ function readOptedInRecipients() {
     email: get(row, 'Email'),
     phone: get(row, 'Phone'),
     eventUpdatesConsent: get(row, 'Event Updates Consent').toLowerCase(),
-    whatsappUpdatesConsent: get(row, 'WhatsApp Updates Consent').toLowerCase()
+    whatsappUpdatesConsent: get(row, 'WhatsApp Updates Consent').toLowerCase(),
+    signupWhatsAppStatus: get(row, 'Signup WhatsApp Status')
   })).filter(record => record.eventUpdatesConsent === 'yes');
 }
 
@@ -237,6 +358,20 @@ function personalize(text, name) {
 }
 
 function sendWhatsAppTemplate(record, templateName, language, message, mapUrl) {
+  sendWhatsAppTemplateWithParameters(record, templateName, language, [
+    { type: 'text', text: record.name || 'there' },
+    { type: 'text', text: message },
+    { type: 'text', text: mapUrl || 'Location details will be shared shortly.' }
+  ]);
+}
+
+function sendWhatsAppSignupTemplate(record, templateName, language) {
+  sendWhatsAppTemplateWithParameters(record, templateName, language, [
+    { type: 'text', text: record.name || 'there' }
+  ]);
+}
+
+function sendWhatsAppTemplateWithParameters(record, templateName, language, parameters) {
   const properties = PropertiesService.getScriptProperties();
   const accessToken = properties.getProperty('WA_ACCESS_TOKEN');
   const phoneNumberId = properties.getProperty('WA_PHONE_NUMBER_ID');
@@ -256,11 +391,7 @@ function sendWhatsAppTemplate(record, templateName, language, message, mapUrl) {
       language: { code: language },
       components: [{
         type: 'body',
-        parameters: [
-          { type: 'text', text: record.name || 'there' },
-          { type: 'text', text: message },
-          { type: 'text', text: mapUrl || 'Location details will be shared shortly.' }
-        ]
+        parameters: parameters
       }]
     }
   };
