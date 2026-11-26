@@ -89,22 +89,44 @@
       </fieldset>
       <section class="preview hidden" id="trigger-review"><strong>Review this update</strong><p id="review-channels"></p><p id="review-subject"></p><p id="review-message"></p><p id="review-map"></p></section>
       <p class="status" id="trigger-status" aria-live="polite"></p>
-      <div class="dialog-actions"><button class="quiet-button" id="cancel-trigger" type="button">Cancel</button><button class="quiet-button hidden" id="back-to-edit" type="button">Back</button><button class="primary-button" id="send-trigger" type="submit">Review &amp; send</button></div>
+      <div class="dialog-actions"><button class="quiet-button" id="cancel-trigger" type="button">Cancel</button><button class="quiet-button hidden" id="back-to-edit" type="button">Back</button><button class="primary-button" id="send-trigger" type="button">Review &amp; send</button></div>
     </form>
   </dialog>
 
   <script>
     const $ = selector => document.querySelector(selector);
     let sessionToken = '';
-    let dashboardData = { emailCount: 0, whatsappCount: 0, recipients: [] };
+    let dashboardData = { emailCount: 0, whatsappCount: 0, signupWhatsAppCount: 0, recipients: [] };
     let currentTrigger = '';
     let triggerStep = 'edit';
+    const triggerForm = $('#trigger-form');
+    triggerForm.noValidate = true;
     const triggerNames = {
       haldi: 'Haldi trigger', haldi_about_to_start: 'Haldi about to start trigger', mehndi: 'Mehndi trigger',
       mehndi_about_to_start: 'Mehndi about to start trigger', engagement: 'Engagement trigger',
       engagement_about_to_start: 'Engagement about to start trigger', wedding: 'Wedding trigger',
-      wedding_about_to_start: 'Wedding about to start trigger', phera_start: 'Phera start trigger'
+      wedding_about_to_start: 'Wedding about to start trigger', phera_start: 'Phera start trigger',
+      signup_thanks: 'Signup thank-you trigger'
     };
+    // Paste each event's Google Maps share URL into its mapUrl value below.
+    const eventPresets = {
+      haldi: { subject: 'Haldi celebrations | Ansh of Our Story', message: 'Hello {{name}}, our Haldi celebrations are almost here! We are getting ready for a joyful morning of colour, laughter, and blessings. We would love to celebrate with you. See you soon!', mapUrl: '' },
+      haldi_about_to_start: { subject: 'Haldi is about to begin | Ansh of Our Story', message: 'Hello {{name}}, our Haldi is about to begin! Please make your way to the venue now so you can join the colour, laughter, and blessings. We cannot wait to celebrate with you.', mapUrl: '' },
+      mehndi: { subject: 'Mehndi celebrations | Ansh of Our Story', message: 'Hello {{name}}, it is time for Mehndi! Join us for beautiful designs, music, and happy memories. We are looking forward to celebrating this special evening with you.', mapUrl: '' },
+      mehndi_about_to_start: { subject: 'Mehndi is about to begin | Ansh of Our Story', message: 'Hello {{name}}, our Mehndi celebrations are about to begin. Please head to the venue and join us for the music, colour, and festivities. We will see you very soon!', mapUrl: '' },
+      engagement: { subject: 'Our engagement celebration | Ansh of Our Story', message: 'Hello {{name}}, we are so excited to celebrate our engagement with you! Join us as we begin this special new chapter surrounded by our favourite people. It means so much to have you with us.', mapUrl: '' },
+      engagement_about_to_start: { subject: 'Our engagement is about to begin | Ansh of Our Story', message: 'Hello {{name}}, our engagement celebration is about to begin. Please make your way to the venue when you can. We are saving a place for you and cannot wait to see you!', mapUrl: '' },
+      wedding: { subject: 'Our wedding day | Ansh of Our Story', message: 'Hello {{name}}, today we celebrate the beginning of our forever. We would be so happy to have you with us. Please join us at the venue and share this beautiful day. Your presence means the world to us.', mapUrl: '' },
+      wedding_about_to_start: { subject: 'Our wedding celebration is about to begin | Ansh of Our Story', message: 'Hello {{name}}, our wedding celebration is about to begin. Please make your way to the venue now so we can share these precious moments together. We will see you very soon!', mapUrl: '' },
+      phera_start: { subject: 'The pheras are about to begin | Ansh of Our Story', message: 'Hello {{name}}, the pheras are about to begin. Please join us at the mandap as we take our vows and begin our life together. Your blessings mean so much to us.', mapUrl: '' }
+    };
+    const signupThanksCopy = 'Hi {{1}}, thank you for signing up for event-day updates from Ansh of Our Story. We will send you helpful alerts during the celebration days. We cannot wait to celebrate with you!';
+    const signupTriggerButton = document.createElement('button');
+    signupTriggerButton.type = 'button';
+    signupTriggerButton.className = 'trigger-card';
+    signupTriggerButton.dataset.trigger = 'signup_thanks';
+    signupTriggerButton.innerHTML = '<strong>Signup thank-you</strong><span>New WhatsApp opt-ins pending</span>';
+    $('#trigger-grid').append(signupTriggerButton);
 
     function serverCall(method, ...args) {
       return new Promise((resolve, reject) => {
@@ -126,6 +148,7 @@
       $('#total-opted').textContent = data.recipients.length;
       $('#email-count').textContent = data.emailCount;
       $('#whatsapp-count').textContent = data.whatsappCount;
+      signupTriggerButton.querySelector('span').textContent = `${data.signupWhatsAppCount} new WhatsApp opt-ins pending`;
       $('#email-quota').textContent = data.emailQuota;
       $('#email-sender-label').textContent = `Email quota · display name: ${data.emailSenderName}`;
       const whatsappStatus = $('#whatsapp-status');
@@ -204,22 +227,47 @@
       $('#trigger-review').classList.add('hidden');
       $('#back-to-edit').classList.add('hidden');
       $('#send-trigger').textContent = 'Review & send';
-      $('#send-trigger').type = 'submit';
+      $('#send-trigger').type = 'button';
       $('#send-trigger').onclick = null;
       $('#send-trigger').disabled = false;
       $('#trigger-title').textContent = triggerNames[currentTrigger];
-      form.elements.subject.value = `${triggerNames[currentTrigger]} | Ansh of Our Story`;
-      form.elements.whatsappTemplate.value = dashboardData.whatsappTemplate || '';
-      form.elements.whatsappLanguage.value = dashboardData.whatsappLanguage || 'en';
+      const signupMode = currentTrigger === 'signup_thanks';
+      form.elements.sendEmail.disabled = signupMode;
+      form.elements.sendWhatsApp.disabled = signupMode;
+      form.elements.sendEmail.checked = !signupMode;
+      form.elements.sendWhatsApp.checked = signupMode;
+      form.elements.sendEmail.closest('label').hidden = signupMode;
+      form.elements.subject.closest('label').hidden = signupMode;
+      form.elements.message.closest('label').hidden = signupMode;
+      form.elements.mapUrl.closest('label').hidden = signupMode;
+      form.elements.subject.disabled = signupMode;
+      form.elements.message.disabled = signupMode;
+      form.elements.mapUrl.disabled = signupMode;
+      form.elements.subject.value = eventPresets[currentTrigger]?.subject || '';
+      form.elements.message.value = eventPresets[currentTrigger]?.message || '';
+      form.elements.mapUrl.value = eventPresets[currentTrigger]?.mapUrl || '';
+      form.elements.whatsappTemplate.value = signupMode ? (dashboardData.signupTemplate || 'event_updates_signup_thanks') : (dashboardData.whatsappTemplate || '');
+      form.elements.whatsappLanguage.value = signupMode ? (dashboardData.signupLanguage || 'en') : (dashboardData.whatsappLanguage || 'en');
       $('#email-target-count').textContent = dashboardData.emailCount;
-      $('#whatsapp-target-count').textContent = dashboardData.whatsappCount;
+      $('#whatsapp-target-count').textContent = signupMode ? dashboardData.signupWhatsAppCount : dashboardData.whatsappCount;
       $('#whatsapp-template-fields').classList.toggle('hidden', !form.elements.sendWhatsApp.checked);
+      $('#whatsapp-template-fields .template-help').textContent = signupMode
+        ? 'This approved WhatsApp template should contain one body variable for the guest name and the thank-you text shown below.'
+        : 'WhatsApp sends an approved template with three body variables: guest name, this message, and map link. Create/approve that template in WhatsApp Manager before sending. The message editor fills the template’s second variable.';
+      $('#send-preview').textContent = signupMode
+        ? `WhatsApp only. This sends the signup thank-you to ${dashboardData.signupWhatsAppCount} new opt-in${dashboardData.signupWhatsAppCount === 1 ? '' : 's'} that have not received it yet.`
+        : 'The update will be sent only to guests who gave the matching consent.';
       showStatus($('#trigger-status'), '');
       updatePreview();
       $('#trigger-dialog').showModal();
     });
     function updatePreview() {
       const form = $('#trigger-form');
+      if (currentTrigger === 'signup_thanks') {
+        $('#send-preview').textContent = `WhatsApp only. This sends the signup thank-you to ${dashboardData.signupWhatsAppCount} new opt-in${dashboardData.signupWhatsAppCount === 1 ? '' : 's'} that have not received it yet.`;
+        $('#whatsapp-template-fields').classList.remove('hidden');
+        return;
+      }
       const channels = [];
       if (form.elements.sendEmail.checked) channels.push(`${dashboardData.emailCount} email opt-ins`);
       if (form.elements.sendWhatsApp.checked) channels.push(`${dashboardData.whatsappCount} WhatsApp opt-ins`);
@@ -239,13 +287,37 @@
       $('#send-trigger').textContent = 'Review & send';
       showStatus($('#trigger-status'), '');
     });
-    $('#trigger-form').addEventListener('submit', async event => {
-      event.preventDefault();
-      const form = event.currentTarget;
+    const handleTriggerAction = async () => {
+      const form = triggerForm;
+      if (triggerStep === 'done') {
+        $('#trigger-dialog').close();
+        return;
+      }
       const sendEmail = form.elements.sendEmail.checked;
       const sendWhatsApp = form.elements.sendWhatsApp.checked;
       if (triggerStep === 'edit') {
+        if (currentTrigger === 'signup_thanks') {
+          if (!dashboardData.whatsappConfigured) { showStatus($('#trigger-status'), 'Set up the WhatsApp Cloud API before sending signup messages.', true); return; }
+          if (!dashboardData.signupWhatsAppCount) { showStatus($('#trigger-status'), 'There are no new WhatsApp opt-ins waiting for a signup thank-you.', true); return; }
+          if (!/^[a-z0-9_]{1,100}$/.test(form.elements.whatsappTemplate.value.trim())) { showStatus($('#trigger-status'), 'Enter the approved signup template name.', true); form.elements.whatsappTemplate.focus(); return; }
+          $('#review-channels').textContent = `This sends a WhatsApp signup thank-you to ${dashboardData.signupWhatsAppCount} new opt-in${dashboardData.signupWhatsAppCount === 1 ? '' : 's'}.`;
+          $('#review-subject').textContent = `Approved template: ${form.elements.whatsappTemplate.value.trim()} (${form.elements.whatsappLanguage.value.trim() || 'en'})`;
+          $('#review-message').textContent = signupThanksCopy.replace('{{1}}', '{{name}}');
+          $('#review-map').textContent = 'No map link is used for signup thank-you messages.';
+          $('#trigger-editor').classList.add('hidden');
+          $('#trigger-editor').disabled = true;
+          $('#trigger-review').classList.remove('hidden');
+          $('#back-to-edit').classList.remove('hidden');
+          $('#send-trigger').textContent = 'Confirm & send';
+          triggerStep = 'review';
+          showStatus($('#trigger-status'), '');
+          return;
+        }
         if (!sendEmail && !sendWhatsApp) { showStatus($('#trigger-status'), 'Choose at least one channel.', true); return; }
+        if (!form.elements.message.value.trim()) { showStatus($('#trigger-status'), 'Write a message before continuing.', true); form.elements.message.focus(); return; }
+        if (sendEmail && !form.elements.subject.value.trim()) { showStatus($('#trigger-status'), 'Add an email subject before continuing.', true); form.elements.subject.focus(); return; }
+        if (sendWhatsApp && !/^[a-z0-9_]{1,100}$/.test(form.elements.whatsappTemplate.value.trim())) { showStatus($('#trigger-status'), 'Enter a valid approved WhatsApp template name.', true); form.elements.whatsappTemplate.focus(); return; }
+        if (form.elements.mapUrl.value.trim() && !/^https:\/\//i.test(form.elements.mapUrl.value.trim())) { showStatus($('#trigger-status'), 'Map links must begin with https://', true); form.elements.mapUrl.focus(); return; }
         const channels = [];
         if (sendEmail) channels.push(`${dashboardData.emailCount} email opt-ins`);
         if (sendWhatsApp) channels.push(`${dashboardData.whatsappCount} WhatsApp opt-ins`);
@@ -276,18 +348,30 @@
         whatsappLanguage: form.elements.whatsappLanguage.value
       };
       try {
-        const result = await serverCall('adminSendTrigger', sessionToken, request);
+        const result = currentTrigger === 'signup_thanks'
+          ? await serverCall('adminSendSignupTrigger', sessionToken, { templateName: form.elements.whatsappTemplate.value.trim(), language: form.elements.whatsappLanguage.value.trim() || 'en' })
+          : await serverCall('adminSendTrigger', sessionToken, request);
         const sent = [];
-        if (sendEmail) sent.push(`${result.emailSent} emails sent${result.emailFailed ? `, ${result.emailFailed} failed` : ''}`);
-        if (sendWhatsApp) sent.push(`${result.whatsappSent} WhatsApp messages sent${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
-        showStatus($('#trigger-status'), sent.join(' · ') + (result.errors.length ? ` — ${result.errors[0]}` : ''), result.emailFailed + result.whatsappFailed > 0);
+        if (currentTrigger === 'signup_thanks') {
+          sent.push(`${result.whatsappSent} signup thank-you messages sent${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
+          if (result.pendingCount) sent.push(`${result.pendingCount} new opt-ins still pending`);
+        } else {
+          if (sendEmail) sent.push(`${result.emailSent} emails sent${result.emailFailed ? `, ${result.emailFailed} failed` : ''}`);
+          if (sendWhatsApp) sent.push(`${result.whatsappSent} WhatsApp messages sent${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
+        }
+        showStatus($('#trigger-status'), sent.join(' · ') + (result.errors.length ? ` — ${result.errors[0]}` : ''), Boolean(result.emailFailed || result.whatsappFailed));
         await loadDashboard();
         button.textContent = 'Done';
         button.type = 'button';
-        button.onclick = () => $('#trigger-dialog').close();
+        triggerStep = 'done';
       } catch (error) {
         showStatus($('#trigger-status'), error.message, true);
       } finally { button.disabled = false; }
+    };
+    $('#send-trigger').addEventListener('click', handleTriggerAction);
+    triggerForm.addEventListener('submit', event => {
+      event.preventDefault();
+      handleTriggerAction();
     });
 
   </script>

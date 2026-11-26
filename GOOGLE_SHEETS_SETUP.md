@@ -22,3 +22,7 @@ The website uses a hidden form target and the Apps Script response to confirm su
 The guest submission endpoint includes field validation and a hidden honeypot field. Since it must accept anonymous submissions, it can still be called by a bot that deliberately imitates the site. If spam becomes a problem, add a CAPTCHA or place the endpoint behind a server-side rate-limited proxy.
 
 The private event admin page and trigger setup are described in [ADMIN_SETUP.md](ADMIN_SETUP.md). Sheet reads and event triggers are authenticated on the Apps Script server; the public spreadsheets remain private.
+
+## Read the greetings at the event
+
+The slideshow at `/LetsReadRSVP/` reads only guest names, RSVP messages, wishes or memories, and married-life advice. Its read-only Apps Script response is public so the event display can load without signing in; it does not return email addresses, phone numbers, attendance, or consent fields. After updating `google-apps-script/Code.gs`, create a new version of the existing web app deployment (Deploy → Manage deployments → Edit → New version → Deploy) so the `read_greetings` action becomes available at the existing `/exec` URL.
