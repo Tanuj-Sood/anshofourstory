@@ -217,18 +217,62 @@
       if (!isRevealed) scratchLayers.forEach(drawScratchCoating);
     }, { passive: true });
   }
-  const petalField = document.querySelector('.petals');
-  for (let i = 0; i < 22; i += 1) {
-    const petal = document.createElement('i');
-    petal.className = 'petal';
-    petal.style.left = `${Math.random() * 100}%`;
-    petal.style.animationDelay = `${-Math.random() * 24}s`;
-    petal.style.animationDuration = `${18 + Math.random() * 20}s`;
-    petal.style.setProperty('--drift', `${Math.random() * 180 - 90}px`);
-    const size = 8 + Math.random() * 12;
-    petal.style.width = `${size}px`;
-    petal.style.height = `${size * 1.55}px`;
-    petalField.appendChild(petal);
+  const petalField = document.getElementById('falling-petals');
+  if (petalField) {
+    const tones = [
+      { id: 'haldi', color: '#e6ad22' },
+      { id: 'mehndi', color: '#628b50' },
+      { id: 'engagement', color: '#9671b8' },
+      { id: 'wedding', color: '#b82e3a' }
+    ];
+    const eventSections = tones.map(tone => ({ ...tone, section: document.querySelector(`[data-petal-tone="${tone.id}"]`) })).filter(tone => tone.section);
+    const petals = [];
+    for (let i = 0; i < 22; i += 1) {
+      const petal = document.createElement('i');
+      petal.className = 'petal';
+      petal.style.left = `${Math.random() * 100}%`;
+      petal.style.animationDelay = `${-Math.random() * 24}s`;
+      petal.style.animationDuration = `${18 + Math.random() * 20}s`;
+      petal.style.setProperty('--drift', `${Math.random() * 180 - 90}px`);
+      const size = 8 + Math.random() * 12;
+      petal.style.width = `${size}px`;
+      petal.style.height = `${size * 1.55}px`;
+      petals.push(petal);
+      petalField.appendChild(petal);
+    }
+    const paintPetals = () => {
+      const scrollY = window.scrollY;
+      const eventStarts = eventSections.map(tone => ({ color: tone.color, top: tone.section.getBoundingClientRect().top + scrollY }));
+      petals.forEach(petal => {
+        const fallingY = petal.getBoundingClientRect().top + scrollY;
+        let color = '#e8b8c2';
+        eventStarts.forEach(tone => {
+          if (fallingY >= tone.top) color = tone.color;
+        });
+        if (petal.dataset.toneColor !== color) {
+          petal.dataset.toneColor = color;
+          petal.style.backgroundColor = color;
+        }
+      });
+      window.requestAnimationFrame(paintPetals);
+    };
+    window.requestAnimationFrame(paintPetals);
+  } else {
+    const existingPetalField = document.querySelector('.petals');
+    if (existingPetalField) {
+      for (let i = 0; i < 22; i += 1) {
+        const petal = document.createElement('i');
+        petal.className = 'petal';
+        petal.style.left = `${Math.random() * 100}%`;
+        petal.style.animationDelay = `${-Math.random() * 24}s`;
+        petal.style.animationDuration = `${18 + Math.random() * 20}s`;
+        petal.style.setProperty('--drift', `${Math.random() * 180 - 90}px`);
+        const size = 8 + Math.random() * 12;
+        petal.style.width = `${size}px`;
+        petal.style.height = `${size * 1.55}px`;
+        existingPetalField.appendChild(petal);
+      }
+    }
   }
 
   const header = document.querySelector('.site-header');

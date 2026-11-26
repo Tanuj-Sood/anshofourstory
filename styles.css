@@ -63,3 +63,39 @@ body.invitation-locked{overflow:hidden}
 .wardrobe-art.scroll-reveal{transition-delay:.12s}
 @media(max-width:650px){.wardrobe-planner{min-height:auto;padding:30px 14px 35px}.wardrobe-planner .ornament{margin-bottom:14px}.wardrobe-planner .section-intro{font-size:13px}.desktop-break{display:none}.wardrobe-art{margin-top:24px;padding:6px 6px 0;border-radius:10px}.wardrobe-art figcaption{padding:10px 5px 12px;font-size:14px}}
 @media(prefers-reduced-motion:reduce){.scroll-reveal{opacity:1;transform:none;transition:none}}
+
+/* Main invitation event gallery and one continuous, recolouring petal field. */
+.petals#falling-petals{position:fixed;z-index:1;inset:0;overflow:hidden;pointer-events:none}
+.petals#falling-petals .petal{background:#e8b8c2;transition:background-color 1.8s cubic-bezier(.2,.65,.25,1),opacity 1.2s ease}
+.hero-content{z-index:2}
+.section>*{position:relative;z-index:2}
+.event-section{position:relative;scroll-margin-top:64px;padding:76px 22px;background:linear-gradient(115deg,rgba(255,252,246,.78),rgba(250,245,240,.62));}
+.event-invitation{position:relative;z-index:2;display:grid;grid-template-columns:minmax(250px,.78fr) minmax(300px,1fr);align-items:center;gap:clamp(34px,6vw,82px);width:min(1060px,100%);margin:auto}
+.event-invitation-reverse .event-art{order:2}.event-invitation-reverse .event-copy{order:1}
+.event-art{width:min(100%,390px);margin:0 auto;padding:9px;border:1px solid rgba(199,178,125,.58);background:rgba(255,255,255,.72);box-shadow:0 18px 48px rgba(117,72,87,.12);transform:rotate(-1.2deg);transition:transform .5s ease,box-shadow .5s ease}
+.event-invitation-reverse .event-art{transform:rotate(1.2deg)}
+.event-art:hover{transform:translateY(-5px) rotate(0);box-shadow:0 24px 52px rgba(117,72,87,.17)}
+.event-art img{display:block;width:100%;height:auto}
+.event-copy{position:relative;z-index:2;max-width:500px;text-align:left}
+.event-copy .eyebrow{margin-bottom:13px;color:#a78d64}
+.event-copy h2{margin:0;color:var(--rose);font:400 clamp(45px,6vw,68px)/.94 var(--serif)}
+.event-warmth{max-width:470px;margin:17px 0 24px;color:#896f73;font:italic 18px/1.55 var(--serif)}
+.event-facts{display:grid;gap:13px;margin:0 0 23px}
+.event-facts div{padding-left:13px;border-left:1px solid rgba(199,178,125,.65)}
+.event-facts dt{margin-bottom:3px;color:#b19b6c;font-size:8px;letter-spacing:.18em;text-transform:uppercase}
+.event-facts dd{margin:0;color:#80666b;font:400 15px/1.4 var(--serif)}
+.event-map{width:min(100%,460px);margin:18px 0 16px;padding:8px;border:1px solid rgba(199,178,125,.5);border-radius:10px;background:rgba(255,255,255,.7);box-shadow:0 9px 26px rgba(117,72,87,.08)}
+.event-map-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;padding:3px 3px 8px;color:#a18c70;font-size:8px;letter-spacing:.13em;text-transform:uppercase}
+.event-map-heading span{color:#bd9ca3;font-size:9px;letter-spacing:.04em;text-align:right;text-transform:none}
+.event-map iframe{display:block;width:100%;height:175px;border:0;border-radius:6px;filter:saturate(.75) sepia(.06)}
+.event-section .outline-button{color:var(--event-accent,#a88d62);border-color:color-mix(in srgb,var(--event-accent,#c7b27d) 45%,white)}
+.event-section .outline-button:hover{background:var(--event-accent,#c4ad80);color:white}
+.event-haldi{--event-accent:#c69216;background:linear-gradient(112deg,rgba(255,247,221,.8),rgba(255,251,241,.58))}
+.event-mehndi{--event-accent:#5b8150;background:linear-gradient(112deg,rgba(237,244,230,.76),rgba(249,248,239,.6))}
+.event-engagement{--event-accent:#b79b73;background:linear-gradient(112deg,rgba(255,253,248,.78),rgba(246,239,238,.58))}
+.event-wedding{--event-accent:#a94c4e;background:linear-gradient(112deg,rgba(250,237,232,.8),rgba(252,246,238,.6))}
+.event-wedding .event-copy h2{color:#9b3d43}
+.event-section .event-art,.event-section .event-copy{isolation:isolate}
+@media(max-width:760px){.event-section{padding:50px 18px}.event-invitation{grid-template-columns:minmax(0,1fr);gap:28px;max-width:560px}.event-art{width:min(72vw,340px)}.event-invitation-reverse .event-art{order:0}.event-invitation-reverse .event-copy{order:1}.event-copy{max-width:none;text-align:center}.event-copy .eyebrow{font-size:8px}.event-warmth{margin:14px auto 22px;font-size:17px}.event-facts{max-width:390px;margin:0 auto 22px;text-align:left}.event-map{margin:19px auto 16px}.event-map iframe{height:185px}.event-copy h2{font-size:54px}}
+@media(max-width:420px){.event-section{padding:38px 15px}.event-art{width:min(78vw,320px);padding:6px}.event-warmth{font-size:16px}.event-facts dd{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.petals#falling-petals .petal{transition:none}}
