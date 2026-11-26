@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8eff0">
+  <meta name="description" content="A gathering of the wishes, memories and words of love shared with Anchita and Suyash.">
+  <link rel="canonical" href="https://anshofourstory.com/LetsReadRSVP">
+  <title>Words of Love | #anshofourstory</title>
+  <link rel="icon" type="image/png" href="../assets/monogram-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .reading-page{position:relative;isolation:isolate;display:grid;min-height:100svh;place-items:center;overflow:hidden;padding:46px 24px;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.94),rgba(250,242,241,.88) 48%,rgba(239,216,218,.72)),linear-gradient(135deg,#fbf7f5,#f4e5e8 52%,#fbf7f2)}
+    .reading-page:before,.reading-page:after{content:"";position:absolute;z-index:-1;width:min(70vw,690px);aspect-ratio:1;border:1px solid rgba(199,178,125,.26);border-radius:50%;pointer-events:none}.reading-page:after{width:min(84vw,820px);border-color:rgba(146,89,107,.11)}
+    .reading-petals{position:fixed;z-index:-1;inset:0;overflow:hidden;pointer-events:none}.reading-petals .petal{opacity:.3}
+    .reading-shell{position:relative;width:min(940px,100%);text-align:center}
+    .reading-brand{position:absolute;top:-22px;left:50%;display:flex;align-items:center;gap:8px;transform:translate(-50%,-100%);color:#a58e6b;text-decoration:none;font:400 12px var(--serif);letter-spacing:.04em;white-space:nowrap}
+    .reading-brand img{width:31px;height:31px;border-radius:50%;object-fit:cover}
+    .reading-eyebrow{margin:0 0 12px;color:#b69c6e;font-size:9px;letter-spacing:.24em;text-transform:uppercase}
+    .reading-title{margin:0;color:var(--rose);font:400 clamp(49px,8vw,88px)/.9 var(--serif);letter-spacing:-.035em}.reading-title i{font-weight:300}
+    .reading-intro{margin:20px 0 34px;color:#9f8180;font:italic 16px/1.6 var(--serif)}
+    .reading-card{position:relative;min-height:330px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px clamp(24px,8vw,96px) 44px;border:1px solid rgba(199,178,125,.55);border-radius:3px;background:linear-gradient(145deg,rgba(255,255,255,.84),rgba(255,252,249,.72));box-shadow:0 24px 75px rgba(117,72,87,.1),inset 0 0 0 7px rgba(255,255,255,.38);overflow:hidden}
+    .reading-card:before,.reading-card:after{content:"✿";position:absolute;color:rgba(199,178,125,.48);font:16px var(--serif)}.reading-card:before{left:18px;top:15px}.reading-card:after{right:18px;bottom:15px}
+    .reading-card-top{position:absolute;top:26px;left:50%;display:flex;align-items:center;gap:12px;transform:translateX(-50%);color:#c6ae80;font-size:8px;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}.reading-card-top:before,.reading-card-top:after{content:"";width:31px;height:1px;background:#e7d9cb}
+    .reading-quote-mark{height:42px;color:#d9b3b8;font:500 65px/.9 var(--serif)}
+    .reading-message{max-width:690px;margin:8px 0 22px;color:#74505c;font:400 clamp(24px,4vw,39px)/1.28 var(--serif);text-wrap:pretty}
+    .reading-signoff{margin:0;color:#ad8c78;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+    .reading-name{margin:9px 0 0;color:var(--rose);font:italic 28px/1 var(--serif)}
+    .reading-card.is-leaving{animation:readingLeave .62s cubic-bezier(.65,0,.85,.4) both}.reading-card.is-entering{animation:readingEnter .82s cubic-bezier(.18,.72,.22,1) both}
+    @keyframes readingLeave{to{opacity:0;transform:translateX(-70px) scale(.985);filter:blur(3px)}}@keyframes readingEnter{from{opacity:0;transform:translateX(80px) scale(.985);filter:blur(3px)}to{opacity:1;transform:translateX(0) scale(1);filter:blur(0)}}
+    .reading-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:21px 2px 0}.reading-count,.reading-status{margin:0;color:#aa8e93;font-size:9px;letter-spacing:.14em;text-transform:uppercase}.reading-count strong{color:#9b7480;font-weight:500}.reading-controls{display:flex;justify-content:center;gap:9px;margin-top:28px}.reading-control{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:112px;padding:11px 17px;border:1px solid #dfcfbf;border-radius:24px;background:rgba(255,255,255,.6);color:#98777e;font:400 9px var(--sans);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .2s,transform .2s,border-color .2s}.reading-control:hover{transform:translateY(-2px);border-color:#c7b27d;background:white}.reading-control.primary{border-color:#cfabb0;background:linear-gradient(110deg,#e6b5bd,#965a6d);color:#fff;box-shadow:0 5px 17px #d5aeb650}.reading-progress{height:2px;margin:22px auto 0;max-width:330px;background:rgba(199,178,125,.2)}.reading-progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,#e6b5bd,#c7b27d);transform-origin:left}
+    .reading-progress.is-running span{animation:readingProgress 9s linear forwards}@keyframes readingProgress{to{width:100%}}
+    .reading-footer{margin:31px 0 0;color:#ac9295;font:italic 13px var(--serif)}.reading-footer b{color:#cc8490;font-weight:400}
+    .reading-empty{font:italic 19px/1.5 var(--serif);color:#9f8180}
+    @media(max-width:600px){.reading-page{padding:60px 16px 36px}.reading-shell{max-width:520px}.reading-brand{top:-16px}.reading-intro{margin:15px 0 25px;font-size:14px}.reading-card{min-height:350px;padding:55px 25px 42px}.reading-card-top{top:22px;font-size:7px}.reading-message{font-size:clamp(23px,6vw,32px)}.reading-bottom{margin-top:16px}.reading-controls{margin-top:23px}.reading-control{min-width:0;padding:10px 13px;font-size:8px}.reading-footer{margin-top:25px}}
+    @media(prefers-reduced-motion:reduce){.reading-card.is-entering,.reading-card.is-leaving{animation-duration:.01ms}.reading-progress.is-running span{animation-duration:.01ms}}
+  </style>
+</head>
+<body>
+  <main class="reading-page">
+    <div class="petals reading-petals" aria-hidden="true"></div>
+    <section class="reading-shell" aria-labelledby="reading-title">
+      <a class="reading-brand" href="../" aria-label="Back to Anchita and Suyash's wedding page"><img src="../assets/monogram-logo.png" alt=""><span>#anshofourstory</span></a>
+      <p class="reading-eyebrow">A garden of kind words</p>
+      <h1 class="reading-title" id="reading-title">Love, <i>in your words</i></h1>
+      <p class="reading-intro">Every wish is a little flower in the story we share.<br>Here are the words we’ll carry with us.</p>
+      <article class="reading-card" id="reading-card" aria-live="polite" aria-atomic="true">
+        <div class="reading-card-top" id="reading-kind">Gathering your wishes</div>
+        <div class="reading-quote-mark" aria-hidden="true">“</div>
+        <p class="reading-empty" id="reading-message">Bringing your lovely notes together…</p>
+        <p class="reading-signoff" id="reading-signoff" hidden>With love,</p>
+        <p class="reading-name" id="reading-name" hidden></p>
+      </article>
+      <div class="reading-bottom"><p class="reading-status" id="reading-status" role="status">Connecting to the wish garden</p><p class="reading-count" id="reading-count" hidden></p></div>
+      <div class="reading-progress" id="reading-progress" aria-hidden="true"><span></span></div>
+      <div class="reading-controls" aria-label="Slideshow controls">
+        <button class="reading-control" id="reading-pause" type="button" aria-pressed="false">Ⅱ &nbsp; Pause</button>
+        <button class="reading-control primary" id="reading-next" type="button">Next wish &nbsp; →</button>
+        <button class="reading-control" id="reading-fullscreen" type="button">⛶ &nbsp; Full screen</button>
+      </div>
+      <p class="reading-footer">Made brighter by the people we <b>love</b></p>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const endpoint = 'https://script.google.com/macros/s/AKfycbyoeRyjp3fwyiSUPhMU4YcDRXo6SamagXn7HryZCHW05ZkfQKTCyHmnVATpQEIkNSgJ6Q/exec';
+      const card = document.getElementById('reading-card');
+      const message = document.getElementById('reading-message');
+      const kind = document.getElementById('reading-kind');
+      const signoff = document.getElementById('reading-signoff');
+      const name = document.getElementById('reading-name');
+      const status = document.getElementById('reading-status');
+      const count = document.getElementById('reading-count');
+      const progress = document.getElementById('reading-progress');
+      const pause = document.getElementById('reading-pause');
+      const interval = 9000;
+      let wishes = [];
+      let previous = -1;
+      let timer;
+      let paused = false;
+      let script;
+
+      function stopTimer() { window.clearTimeout(timer); progress.classList.remove('is-running'); }
+      function schedule() {
+        stopTimer();
+        if (paused || wishes.length < 2) return;
+        void progress.offsetWidth;
+        progress.classList.add('is-running');
+        timer = window.setTimeout(showNext, interval);
+      }
+      function showNext() {
+        if (!wishes.length) return;
+        stopTimer();
+        card.classList.remove('is-entering');
+        card.classList.add('is-leaving');
+        window.setTimeout(() => {
+          let index = Math.floor(Math.random() * wishes.length);
+          if (wishes.length > 1) while (index === previous) index = Math.floor(Math.random() * wishes.length);
+          previous = index;
+          const wish = wishes[index];
+          kind.textContent = wish.kind || 'A note for the couple';
+          message.textContent = wish.message;
+          message.className = '';
+          signoff.hidden = false;
+          name.hidden = false;
+          name.textContent = wish.name || 'A loved one';
+          count.hidden = false;
+          count.replaceChildren();
+          const current = document.createElement('strong');
+          current.textContent = String(index + 1).padStart(2, '0');
+          count.append(current, document.createTextNode('  /  ' + String(wishes.length).padStart(2, '0') + ' words of love'));
+          status.textContent = 'A little love, shared aloud';
+          card.classList.remove('is-leaving');
+          card.classList.add('is-entering');
+          schedule();
+        }, 580);
+      }
+      window.receiveWeddingGreetings = data => {
+        if (script) script.remove();
+        wishes = (data && Array.isArray(data.greetings) ? data.greetings : []).filter(item => item && typeof item.message === 'string' && item.message.trim());
+        if (data && data.error) { status.textContent = data.error; message.textContent = 'Please refresh in a moment to try again.'; return; }
+        if (!wishes.length) { status.textContent = 'The wish garden is ready'; message.className = 'reading-empty'; message.textContent = 'The first lovely words are on their way. Check back soon.'; return; }
+        status.textContent = wishes.length + (wishes.length === 1 ? ' lovely word collected' : ' lovely words collected');
+        showNext();
+      };
+      script = document.createElement('script');
+      script.src = endpoint + '?action=read_greetings&callback=receiveWeddingGreetings&v=' + Date.now();
+      script.onerror = () => { status.textContent = 'Could not reach the wish garden'; message.textContent = 'Please check the connection and refresh this page.'; };
+      document.head.appendChild(script);
+
+      document.getElementById('reading-next').addEventListener('click', showNext);
+      pause.addEventListener('click', () => {
+        paused = !paused;
+        pause.setAttribute('aria-pressed', String(paused));
+        pause.innerHTML = paused ? '▶ &nbsp; Play' : 'Ⅱ &nbsp; Pause';
+        if (paused) stopTimer(); else schedule();
+      });
+      document.getElementById('reading-fullscreen').addEventListener('click', async event => {
+        try {
+          if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+          else await document.exitFullscreen();
+          event.currentTarget.innerHTML = document.fullscreenElement ? '⛶ &nbsp; Exit full screen' : '⛶ &nbsp; Full screen';
+        } catch (_) { status.textContent = 'Use your browser menu to enter full screen'; }
+      });
+      const petalField = document.querySelector('.reading-petals');
+      for (let index = 0; index < 14; index += 1) {
+        const petal = document.createElement('span');
+        petal.className = 'petal';
+        petal.style.left = Math.random() * 100 + '%';
+        petal.style.animationDuration = 18 + Math.random() * 20 + 's';
+        petal.style.animationDelay = -Math.random() * 30 + 's';
+        petal.style.setProperty('--drift', (Math.random() * 130 - 65) + 'px');
+        petalField.appendChild(petal);
+      }
+    })();
+  </script>
+</body>
+</html>

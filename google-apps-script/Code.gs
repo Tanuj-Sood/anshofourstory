@@ -22,12 +22,52 @@ const EVENT_TRIGGERS = {
 };
 
 function doGet(event) {
+  if (event && event.parameter && event.parameter.action === 'read_greetings') {
+    return readPublicGreetings(event.parameter.callback);
+  }
   if (event && event.parameter && event.parameter.page === 'admin') {
     return HtmlService.createHtmlOutputFromFile('Admin')
       .setTitle('Ansh of Our Story | Admin')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
   return HtmlService.createHtmlOutput('Ansh of Our Story guest services are ready.');
+}
+
+function readPublicGreetings(callback) {
+  const safeCallback = /^[A-Za-z_$][0-9A-Za-z_$]*(\.[A-Za-z_$][0-9A-Za-z_$]*)*$/.test(String(callback || ''))
+    ? String(callback)
+    : '';
+  const result = { greetings: [] };
+  try {
+    const readRows = (destination, fields) => {
+      const sheet = SpreadsheetApp.openById(destination.id).getSheets()[0];
+      const values = sheet.getDataRange().getDisplayValues();
+      if (values.length < 2) return [];
+      const headers = values[0].map(value => String(value).trim().toLowerCase());
+      const column = name => headers.indexOf(name.toLowerCase());
+      const nameColumn = column(fields.name);
+      const contentColumns = fields.content.map(column);
+      return values.slice(1).flatMap(row => {
+        const name = nameColumn < 0 ? '' : String(row[nameColumn] || '').trim();
+        return contentColumns.map((index, contentIndex) => ({
+          name: name || 'A loved one',
+          kind: fields.kinds[contentIndex],
+          message: index < 0 ? '' : String(row[index] || '').trim()
+        })).filter(item => item.message);
+      });
+    };
+    result.greetings = readRows(SHEETS.rsvps, {
+      name: 'Guest Name', content: ['Message to the Couple'], kinds: ['A note for the couple']
+    }).concat(readRows(SHEETS.notes, {
+      name: 'Name', content: ['Wish or Memory', 'Advice for Married Life'], kinds: ['A wish or memory', 'A little wisdom for the road']
+    }));
+  } catch (error) {
+    console.error(error);
+    result.error = 'We could not load the greetings right now.';
+  }
+  const json = JSON.stringify(result).replace(/</g, '\\u003c');
+  if (safeCallback) return ContentService.createTextOutput(safeCallback + '(' + json + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(event) {
@@ -245,7 +285,7 @@ function adminSendTrigger(token, request) {
         result.whatsappSent += 1;
       } catch (error) {
         result.whatsappFailed += 1;
-        if (result.errors.length < 3) result.errors.push('A WhatsApp message could not be sent. Check the Cloud API credentials and approved template.');
+        if (result.errors.length < 3) result.errors.push(summarizeWhatsAppError(error));
       }
     });
   }
@@ -313,7 +353,7 @@ function adminSendSignupTrigger(token, request) {
       } catch (statusError) {
         if (result.errors.length < 3) result.errors.push('A failed message could not be returned to the pending list.');
       }
-      if (result.errors.length < 3) result.errors.push('A signup WhatsApp message failed. Check the approved template and recipient number.');
+      if (result.errors.length < 3) result.errors.push(summarizeWhatsAppError(error));
     }
   });
   result.pendingCount = readOptedInRecipients().filter(record => record.whatsappUpdatesConsent === 'yes' && record.phone && isSignupPending(record.signupWhatsAppStatus)).length;
@@ -404,6 +444,22 @@ function sendWhatsAppTemplateWithParameters(record, templateName, language, para
   });
   const status = response.getResponseCode();
   if (status < 200 || status >= 300) throw new Error('WhatsApp API error: ' + response.getContentText().slice(0, 300));
+}
+
+function summarizeWhatsAppError(error) {
+  const message = String(error && error.message || error || 'Unknown WhatsApp error');
+  const marker = 'WhatsApp API error: ';
+  if (message.indexOf(marker) === 0) {
+    try {
+      const details = JSON.parse(message.slice(marker.length));
+      const apiError = details.error || details;
+      const code = apiError.code ? ' (code ' + apiError.code + (apiError.error_subcode ? '/' + apiError.error_subcode : '') + ')' : '';
+      return ('Meta rejected the WhatsApp request' + code + ': ' + String(apiError.message || 'No error detail returned')).slice(0, 260);
+    } catch (parseError) {
+      return ('Meta rejected the WhatsApp request: ' + message.slice(marker.length)).slice(0, 260);
+    }
+  }
+  return message.slice(0, 260);
 }
 
 function responsePage(requestId, ok, message) {
