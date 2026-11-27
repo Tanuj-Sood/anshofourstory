@@ -112,6 +112,11 @@ function doGet(event) {
       .setTitle('Ansh of Our Story | Admin')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
+  if (event && event.parameter && event.parameter.page === 'manager') {
+    return HtmlService.createHtmlOutputFromFile('Manager')
+      .setTitle('Ansh of Our Story | Manager Corner')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
   return HtmlService.createHtmlOutput('Ansh of Our Story guest services are ready.');
 }
 
@@ -318,6 +323,110 @@ function adminGetDashboard(token) {
     signupLanguage: properties.getProperty('WA_SIGNUP_TEMPLATE_LANGUAGE') || 'en',
     emailSenderName: properties.getProperty('EMAIL_SENDER_NAME') || 'Anchita & Suyash'
   };
+}
+
+function managerLogin(userId, password) {
+  const properties = PropertiesService.getScriptProperties();
+  const expectedUser = properties.getProperty('MANAGER_USER_ID');
+  const expectedPassword = properties.getProperty('MANAGER_PASSWORD');
+  if (!expectedUser || !expectedPassword) throw new Error('Manager credentials are not configured in Apps Script properties.');
+  if (String(userId || '') !== expectedUser || String(password || '') !== expectedPassword) throw new Error('The user ID or password is incorrect.');
+  const token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  CacheService.getScriptCache().put('manager-session:' + token, 'valid', 21600);
+  return { token: token, expiresIn: 21600 };
+}
+
+function managerLogout(token) {
+  if (token) CacheService.getScriptCache().remove('manager-session:' + String(token));
+  return { ok: true };
+}
+
+function managerGetData(token) {
+  requireManager_(token);
+  return {
+    guests: readAcceptedGuests_(),
+    vendors: readVendors_(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function managerAddVendor(token, vendor) {
+  requireManager_(token);
+  vendor = vendor || {};
+  const work = cleanText(vendor.work, 120, 'Vendor work', true);
+  const name = cleanText(vendor.name, 120, 'Vendor name', true);
+  const contact = cleanText(vendor.contact, 30, 'Contact number', true);
+  const contactDigits = contact.replace(/\D/g, '');
+  if (!/^\+?[0-9][0-9\s().-]{5,28}$/.test(contact) || contactDigits.length < 7 || contactDigits.length > 15) {
+    throw new Error('Enter a valid contact number, including its country code if needed.');
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = SpreadsheetApp.openById('1_VWGFzYQUU4qu2ToK18Ft85ATHX2mBTrKXtdsrUHW60').getSheets()[0];
+    const lastColumn = sheet.getLastColumn();
+    if (!lastColumn) throw new Error('Add the Vendor Work, Name, and Contact headers to the first row of the vendor sheet.');
+    const headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(value => String(value).trim().toLowerCase());
+    const workColumn = headers.indexOf('vendor work') + 1;
+    const nameColumn = headers.indexOf('name') + 1;
+    const contactColumn = headers.indexOf('contact') + 1;
+    if (!workColumn || !nameColumn || !contactColumn) {
+      throw new Error('The vendor sheet needs the headers Vendor Work, Name, and Contact in its first row.');
+    }
+    const rowNumber = sheet.getLastRow() + 1;
+    [[workColumn, work], [nameColumn, name], [contactColumn, contact]].forEach(entry => {
+      const cell = sheet.getRange(rowNumber, entry[0]);
+      cell.setNumberFormat('@');
+      cell.setValue(entry[1]);
+    });
+    SpreadsheetApp.flush();
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function requireManager_(token) {
+  if (!token || CacheService.getScriptCache().get('manager-session:' + String(token)) !== 'valid') {
+    throw new Error('Your manager session expired. Please sign in again.');
+  }
+}
+
+function readAcceptedGuests_() {
+  const sheet = SpreadsheetApp.openById(SHEETS.rsvps.id).getSheets()[0];
+  const values = sheet.getDataRange().getDisplayValues();
+  if (values.length < 2) return [];
+  const headers = values.shift().map(value => String(value).trim().toLowerCase());
+  const column = name => headers.indexOf(name.toLowerCase());
+  const nameIndex = column('Guest Name'), attendanceIndex = column('Attendance');
+  const emailIndex = column('Email'), phoneIndex = column('Phone');
+  if ([nameIndex, attendanceIndex, emailIndex, phoneIndex].some(index => index < 0)) {
+    throw new Error('The RSVP sheet is missing one or more expected columns.');
+  }
+  return values.map(row => ({
+    name: String(row[nameIndex] || '').trim(),
+    attendance: String(row[attendanceIndex] || '').trim().toLowerCase(),
+    email: String(row[emailIndex] || '').trim(),
+    phone: String(row[phoneIndex] || '').trim()
+  })).filter(guest => guest.name && ['accepts', 'joyfully accepts', 'accepted'].indexOf(guest.attendance) >= 0);
+}
+
+function readVendors_() {
+  const sheet = SpreadsheetApp.openById('1_VWGFzYQUU4qu2ToK18Ft85ATHX2mBTrKXtdsrUHW60').getSheets()[0];
+  const values = sheet.getDataRange().getDisplayValues();
+  if (values.length < 2) return [];
+  const headers = values.shift().map(value => String(value).trim().toLowerCase());
+  const column = name => headers.indexOf(name.toLowerCase());
+  const workIndex = column('Vendor Work'), nameIndex = column('Name'), contactIndex = column('Contact');
+  if ([workIndex, nameIndex, contactIndex].some(index => index < 0)) {
+    throw new Error('The vendor sheet needs the headers Vendor Work, Name, and Contact in its first row.');
+  }
+  return values.map(row => ({
+    work: String(row[workIndex] || '').trim(),
+    name: String(row[nameIndex] || '').trim(),
+    contact: String(row[contactIndex] || '').trim()
+  })).filter(vendor => vendor.work || vendor.name || vendor.contact);
 }
 
 function adminSendTrigger(token, request) {

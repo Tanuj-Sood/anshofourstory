@@ -41,7 +41,7 @@
     </main>
 
     <main id="dashboard" class="hidden">
-      <div class="page-title"><div><p class="eyebrow">Guest list &amp; event updates</p><h1>Admin desk</h1><p>Only guests who opted in appear in this contact list.</p></div></div>
+      <div class="page-title"><div><p class="eyebrow">Guest list &amp; event updates</p><h1>Admin desk</h1><p>Only guests who opted in appear in this contact list.</p></div><button class="quiet-button" id="refresh-data" type="button">Refresh sheet data</button></div>
       <div class="stats">
         <div class="stat"><strong id="total-opted">0</strong><span>Event updates opt-ins</span></div>
         <div class="stat"><strong id="email-count">0</strong><span>Contactable by email</span></div>
@@ -172,13 +172,26 @@
       $('#email-target-count').textContent = data.emailCount;
       $('#whatsapp-target-count').textContent = data.whatsappCount;
     }
-    async function loadDashboard() {
+    async function loadDashboard(showRefreshStatus) {
+      const refreshButton = $('#refresh-data');
+      if (showRefreshStatus) {
+        refreshButton.disabled = true;
+        refreshButton.textContent = 'Refreshing…';
+        showStatus($('#dashboard-status'), 'Pulling the latest sheet data…');
+      }
       try {
         const data = await serverCall('adminGetDashboard', sessionToken);
         renderRecipients(data);
+        if (showRefreshStatus) {
+          const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          showStatus($('#dashboard-status'), `Sheet data refreshed at ${time}.`);
+        }
       } catch (error) {
         showStatus($('#dashboard-status'), error.message, true);
         if (/session/i.test(error.message)) signOut(false);
+      } finally {
+        refreshButton.disabled = false;
+        refreshButton.textContent = 'Refresh sheet data';
       }
     }
     function signIn() {
@@ -214,6 +227,7 @@
       } finally { button.disabled = false; }
     });
     $('#logout-button').addEventListener('click', () => signOut(true));
+    $('#refresh-data').addEventListener('click', () => loadDashboard(true));
     $('#trigger-grid').addEventListener('click', event => {
       const button = event.target.closest('[data-trigger]');
       if (!button) return;

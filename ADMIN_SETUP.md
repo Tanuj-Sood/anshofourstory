@@ -9,9 +9,10 @@ The page itself is public static content, so hiding the URL is not its security.
 1. Open the standalone Apps Script project that currently handles RSVP submissions.
 2. Replace `Code.gs` with `google-apps-script/Code.gs` from this repository.
 3. Add an Apps Script **HTML** file named `Admin` and paste in `google-apps-script/Admin.html`.
-4. In **Project Settings → Script Properties**, add the values described below. Keep this project private to the people who administer the wedding.
-5. Choose **Deploy → Manage deployments**, edit the existing web app deployment, create a new version, and deploy it. Keep the existing `/exec` deployment URL; the site’s `/admin/` wrapper already points to it.
-6. Accept the new authorization requests for spreadsheet access, email sending, and external HTTP requests. Do not share the Apps Script project with guests.
+4. Add an Apps Script **HTML** file named `Manager` and paste in `google-apps-script/Manager.html`.
+5. In **Project Settings → Script Properties**, add the values described below. Keep this project private to the people who administer the wedding.
+6. Choose **Deploy → Manage deployments**, edit the existing web app deployment, create a new version, and deploy it. Keep the existing `/exec` deployment URL; the site's `/admin/` and `/Manager_corner/` wrappers already point to it.
+7. Accept the new authorization requests for spreadsheet access, email sending, and external HTTP requests. Do not share the Apps Script project with guests.
 
 The website host serves `admin/index.html` at `/admin/`. Most static hosts redirect `/admin` to `/admin/`; if yours does not, use `/admin/` or configure that redirect in the host settings.
 
@@ -23,6 +24,8 @@ Set these in Apps Script project settings, never in `Admin.html`, `script.js`, o
 |---|---|
 | `ADMIN_USER_ID` | `8223922` (or another ID you choose) |
 | `ADMIN_PASSWORD` | A new, unique password. The password previously posted in chat should be replaced before deployment. |
+| `MANAGER_USER_ID` | A separate manager login ID you choose. |
+| `MANAGER_PASSWORD` | A separate, unique manager password. Do not reuse the admin password. |
 | `EMAIL_SENDER_NAME` | Optional display name, for example `Ansh of Our Story` |
 | `EMAIL_REPLY_TO` | Optional reply address |
 | `WA_ACCESS_TOKEN` | Long-lived access token for your Meta WhatsApp Business Platform app |
@@ -34,6 +37,14 @@ Set these in Apps Script project settings, never in `Admin.html`, `script.js`, o
 | `WA_SIGNUP_TEMPLATE_LANGUAGE` | Optional language for the signup template; defaults to `en` |
 
 The website login form contains no fixed user ID or password. Script Properties are private to the Apps Script project, so restrict project editor access to trusted administrators. Do not send the WhatsApp token or any account password in chat or commit it to Git.
+
+## Manager Corner
+
+Sign-in uses only `MANAGER_USER_ID` and `MANAGER_PASSWORD`, separate from the admin credentials. The manager session is held server-side and expires after six hours. The view lists RSVP rows marked `Accepts`, showing guest name, phone, and email.
+
+Vendor contacts come from spreadsheet `1_VWGFzYQUU4qu2ToK18Ft85ATHX2mBTrKXtdsrUHW60`, first tab, with these exact headers in row 1: `Vendor Work`, `Name`, `Contact`. The Google account that owns/runs the Apps Script deployment must have access to this spreadsheet. Managers do not need sheet access: the **Add vendor** tab writes the three fields through the authenticated Apps Script session. Phone-style values in `Contact` and RSVP `Phone` get a tap-to-call link when they contain a valid full number.
+
+The admin desk now has a **Refresh sheet data** button to fetch and render the latest RSVP rows without signing out and in again. Add `Manager.html` to the Apps Script project, deploy a new version, then open `https://anshofourstory.com/Manager_corner/`.
 
 ## Email sender identity
 
