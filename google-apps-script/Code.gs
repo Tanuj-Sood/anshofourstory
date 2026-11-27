@@ -112,6 +112,11 @@ function doGet(event) {
       .setTitle('Ansh of Our Story | Admin')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
+  if (event && event.parameter && event.parameter.page === 'manager') {
+    return HtmlService.createHtmlOutputFromFile('Manager')
+      .setTitle('Ansh of Our Story | Manager Corner')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
   return HtmlService.createHtmlOutput('Ansh of Our Story guest services are ready.');
 }
 
@@ -320,6 +325,110 @@ function adminGetDashboard(token) {
   };
 }
 
+function managerLogin(userId, password) {
+  const properties = PropertiesService.getScriptProperties();
+  const expectedUser = properties.getProperty('MANAGER_USER_ID');
+  const expectedPassword = properties.getProperty('MANAGER_PASSWORD');
+  if (!expectedUser || !expectedPassword) throw new Error('Manager credentials are not configured in Apps Script properties.');
+  if (String(userId || '') !== expectedUser || String(password || '') !== expectedPassword) throw new Error('The user ID or password is incorrect.');
+  const token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  CacheService.getScriptCache().put('manager-session:' + token, 'valid', 21600);
+  return { token: token, expiresIn: 21600 };
+}
+
+function managerLogout(token) {
+  if (token) CacheService.getScriptCache().remove('manager-session:' + String(token));
+  return { ok: true };
+}
+
+function managerGetData(token) {
+  requireManager_(token);
+  return {
+    guests: readAcceptedGuests_(),
+    vendors: readVendors_(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function managerAddVendor(token, vendor) {
+  requireManager_(token);
+  vendor = vendor || {};
+  const work = cleanText(vendor.work, 120, 'Vendor work', true);
+  const name = cleanText(vendor.name, 120, 'Vendor name', true);
+  const contact = cleanText(vendor.contact, 30, 'Contact number', true);
+  const contactDigits = contact.replace(/\D/g, '');
+  if (!/^\+?[0-9][0-9\s().-]{5,28}$/.test(contact) || contactDigits.length < 7 || contactDigits.length > 15) {
+    throw new Error('Enter a valid contact number, including its country code if needed.');
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = SpreadsheetApp.openById('1_VWGFzYQUU4qu2ToK18Ft85ATHX2mBTrKXtdsrUHW60').getSheets()[0];
+    const lastColumn = sheet.getLastColumn();
+    if (!lastColumn) throw new Error('Add the Vendor Work, Name, and Contact headers to the first row of the vendor sheet.');
+    const headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(value => String(value).trim().toLowerCase());
+    const workColumn = headers.indexOf('vendor work') + 1;
+    const nameColumn = headers.indexOf('name') + 1;
+    const contactColumn = headers.indexOf('contact') + 1;
+    if (!workColumn || !nameColumn || !contactColumn) {
+      throw new Error('The vendor sheet needs the headers Vendor Work, Name, and Contact in its first row.');
+    }
+    const rowNumber = sheet.getLastRow() + 1;
+    [[workColumn, work], [nameColumn, name], [contactColumn, contact]].forEach(entry => {
+      const cell = sheet.getRange(rowNumber, entry[0]);
+      cell.setNumberFormat('@');
+      cell.setValue(entry[1]);
+    });
+    SpreadsheetApp.flush();
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function requireManager_(token) {
+  if (!token || CacheService.getScriptCache().get('manager-session:' + String(token)) !== 'valid') {
+    throw new Error('Your manager session expired. Please sign in again.');
+  }
+}
+
+function readAcceptedGuests_() {
+  const sheet = SpreadsheetApp.openById(SHEETS.rsvps.id).getSheets()[0];
+  const values = sheet.getDataRange().getDisplayValues();
+  if (values.length < 2) return [];
+  const headers = values.shift().map(value => String(value).trim().toLowerCase());
+  const column = name => headers.indexOf(name.toLowerCase());
+  const nameIndex = column('Guest Name'), attendanceIndex = column('Attendance');
+  const emailIndex = column('Email'), phoneIndex = column('Phone');
+  if ([nameIndex, attendanceIndex, emailIndex, phoneIndex].some(index => index < 0)) {
+    throw new Error('The RSVP sheet is missing one or more expected columns.');
+  }
+  return values.map(row => ({
+    name: String(row[nameIndex] || '').trim(),
+    attendance: String(row[attendanceIndex] || '').trim().toLowerCase(),
+    email: String(row[emailIndex] || '').trim(),
+    phone: String(row[phoneIndex] || '').trim()
+  })).filter(guest => guest.name && ['accepts', 'joyfully accepts', 'accepted'].indexOf(guest.attendance) >= 0);
+}
+
+function readVendors_() {
+  const sheet = SpreadsheetApp.openById('1_VWGFzYQUU4qu2ToK18Ft85ATHX2mBTrKXtdsrUHW60').getSheets()[0];
+  const values = sheet.getDataRange().getDisplayValues();
+  if (values.length < 2) return [];
+  const headers = values.shift().map(value => String(value).trim().toLowerCase());
+  const column = name => headers.indexOf(name.toLowerCase());
+  const workIndex = column('Vendor Work'), nameIndex = column('Name'), contactIndex = column('Contact');
+  if ([workIndex, nameIndex, contactIndex].some(index => index < 0)) {
+    throw new Error('The vendor sheet needs the headers Vendor Work, Name, and Contact in its first row.');
+  }
+  return values.map(row => ({
+    work: String(row[workIndex] || '').trim(),
+    name: String(row[nameIndex] || '').trim(),
+    contact: String(row[contactIndex] || '').trim()
+  })).filter(vendor => vendor.work || vendor.name || vendor.contact);
+}
+
 function adminSendTrigger(token, request) {
   requireAdmin(token);
   request = request || {};
@@ -332,7 +441,7 @@ function adminSendTrigger(token, request) {
   if (!request.sendEmail && !request.sendWhatsApp) throw new Error('Choose email, WhatsApp, or both.');
 
   const recipients = readOptedInRecipients();
-  const result = { trigger: triggerName, emailSent: 0, emailFailed: 0, whatsappSent: 0, whatsappFailed: 0, errors: [] };
+  const result = { trigger: triggerName, emailSent: 0, emailFailed: 0, whatsappSent: 0, whatsappFailed: 0, whatsappMessageIds: [], errors: [] };
   if (request.sendEmail) {
     const subject = cleanText(request.subject, 180, 'Email subject', true).replace(/[\r\n]+/g, ' ');
     const emailRecipients = recipients.filter(record => record.email);
@@ -361,8 +470,9 @@ function adminSendTrigger(token, request) {
     const language = cleanText(request.whatsappLanguage || PropertiesService.getScriptProperties().getProperty('WA_TEMPLATE_LANGUAGE') || 'en', 20, 'WhatsApp language', true);
     whatsappRecipients.forEach(record => {
       try {
-        sendWhatsAppTemplate(record, templateName, language, personalize(message, record.name), mapUrl);
+        const messageId = sendWhatsAppTemplate(record, templateName, language, personalize(message, record.name), mapUrl);
         result.whatsappSent += 1;
+        if (result.whatsappMessageIds.length < 3) result.whatsappMessageIds.push(messageId);
       } catch (error) {
         result.whatsappFailed += 1;
         if (result.errors.length < 3) result.errors.push(summarizeWhatsAppError(error));
@@ -416,13 +526,14 @@ function adminSendSignupTrigger(token, request) {
     lock.releaseLock();
   }
 
-  const result = { whatsappSent: 0, whatsappFailed: 0, pendingCount: 0, errors: [] };
+  const result = { whatsappSent: 0, whatsappFailed: 0, whatsappMessageIds: [], pendingCount: 0, errors: [] };
   claimed.forEach(record => {
     try {
-      sendWhatsAppSignupTemplate(record, templateName, language);
+      const messageId = sendWhatsAppSignupTemplate(record, templateName, language);
       result.whatsappSent += 1;
+      if (result.whatsappMessageIds.length < 3) result.whatsappMessageIds.push(messageId);
       try {
-        sheet.getRange(record.rowNumber, trackingColumn).setValue('Sent|' + new Date().toISOString());
+        sheet.getRange(record.rowNumber, trackingColumn).setValue('Accepted|' + new Date().toISOString());
       } catch (statusError) {
         if (result.errors.length < 3) result.errors.push('A message was sent, but its sent status could not be saved.');
       }
@@ -478,7 +589,7 @@ function personalize(text, name) {
 }
 
 function sendWhatsAppTemplate(record, templateName, language, message, mapUrl) {
-  sendWhatsAppTemplateWithParameters(record, templateName, language, [
+  return sendWhatsAppTemplateWithParameters(record, templateName, language, [
     { type: 'text', text: record.name || 'there' },
     { type: 'text', text: message },
     { type: 'text', text: mapUrl || 'Location details will be shared shortly.' }
@@ -486,7 +597,7 @@ function sendWhatsAppTemplate(record, templateName, language, message, mapUrl) {
 }
 
 function sendWhatsAppSignupTemplate(record, templateName, language) {
-  sendWhatsAppTemplateWithParameters(record, templateName, language, [
+  return sendWhatsAppTemplateWithParameters(record, templateName, language, [
     { type: 'text', text: record.name || 'there' }
   ]);
 }
@@ -523,7 +634,18 @@ function sendWhatsAppTemplateWithParameters(record, templateName, language, para
     muteHttpExceptions: true
   });
   const status = response.getResponseCode();
-  if (status < 200 || status >= 300) throw new Error('WhatsApp API error: ' + response.getContentText().slice(0, 300));
+  const responseText = response.getContentText();
+  if (status < 200 || status >= 300) throw new Error('WhatsApp API error: ' + responseText.slice(0, 300));
+  let responseBody;
+  try {
+    responseBody = JSON.parse(responseText);
+  } catch (error) {
+    throw new Error('WhatsApp API returned HTTP ' + status + ' but the response was not valid JSON. Check the Apps Script execution log.');
+  }
+  const messageId = responseBody && responseBody.messages && responseBody.messages[0] && responseBody.messages[0].id;
+  if (!messageId) throw new Error('WhatsApp API returned HTTP ' + status + ' without a message ID. Response: ' + responseText.slice(0, 300));
+  console.log('WhatsApp request accepted by Meta; message ID: ' + messageId);
+  return messageId;
 }
 
 function summarizeWhatsAppError(error) {
