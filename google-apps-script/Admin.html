@@ -367,12 +367,14 @@
           : await serverCall('adminSendTrigger', sessionToken, request);
         const sent = [];
         if (currentTrigger === 'signup_thanks') {
-          sent.push(`${result.whatsappSent} signup thank-you messages sent${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
+          sent.push(`${result.whatsappSent} signup thank-you request${result.whatsappSent === 1 ? '' : 's'} accepted by Meta${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
           if (result.pendingCount) sent.push(`${result.pendingCount} new opt-ins still pending`);
         } else {
           if (sendEmail) sent.push(`${result.emailSent} emails sent${result.emailFailed ? `, ${result.emailFailed} failed` : ''}`);
-          if (sendWhatsApp) sent.push(`${result.whatsappSent} WhatsApp messages sent${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
+          if (sendWhatsApp) sent.push(`${result.whatsappSent} WhatsApp request${result.whatsappSent === 1 ? '' : 's'} accepted by Meta${result.whatsappFailed ? `, ${result.whatsappFailed} failed` : ''}`);
         }
+        if (result.whatsappMessageIds && result.whatsappMessageIds.length) sent.push(`Meta message ID${result.whatsappMessageIds.length === 1 ? '' : 's'}: ${result.whatsappMessageIds.join(', ')}`);
+        if (result.whatsappSent) sent.push('Delivery is not confirmed here; check WhatsApp status updates.');
         showStatus($('#trigger-status'), sent.join(' · ') + (result.errors.length ? ` — ${result.errors[0]}` : ''), Boolean(result.emailFailed || result.whatsappFailed));
         await loadDashboard();
         button.textContent = 'Done';

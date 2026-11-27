@@ -74,7 +74,7 @@ The event button defaults are in `google-apps-script/Admin.html`, inside the `ev
 
 ## Signup thank-you trigger
 
-The extra **Signup thank-you** button sends WhatsApp only to new rows with both event-update and WhatsApp consent, a phone number, and `Signup WhatsApp Status = Pending`. The Apps Script adds this status column when the admin dashboard first loads after deployment. Existing rows are marked `Existing`; new WhatsApp opt-ins are marked `Pending`; successful sends become `Sent` with a timestamp; failed sends return to `Pending`. Repeated clicks therefore target pending new signups and any failed sends, not rows already marked sent.
+The extra **Signup thank-you** button sends WhatsApp only to new rows with both event-update and WhatsApp consent, a phone number, and `Signup WhatsApp Status = Pending`. The Apps Script adds this status column when the admin dashboard first loads after deployment. Existing rows are marked `Existing`; new WhatsApp opt-ins are marked `Pending`; requests accepted by Meta become `Accepted` with a timestamp; failed requests return to `Pending`. `Accepted` confirms API acceptance only, not message delivery. Delivery status tracking can be added later through Meta webhooks.
 
 In WhatsApp Manager, create and get approval for a separate one-variable utility template named `event_updates_signup_thanks`. Use this body, with `{{1}}` as the guest name:
 

@@ -441,7 +441,7 @@ function adminSendTrigger(token, request) {
   if (!request.sendEmail && !request.sendWhatsApp) throw new Error('Choose email, WhatsApp, or both.');
 
   const recipients = readOptedInRecipients();
-  const result = { trigger: triggerName, emailSent: 0, emailFailed: 0, whatsappSent: 0, whatsappFailed: 0, errors: [] };
+  const result = { trigger: triggerName, emailSent: 0, emailFailed: 0, whatsappSent: 0, whatsappFailed: 0, whatsappMessageIds: [], errors: [] };
   if (request.sendEmail) {
     const subject = cleanText(request.subject, 180, 'Email subject', true).replace(/[\r\n]+/g, ' ');
     const emailRecipients = recipients.filter(record => record.email);
@@ -470,8 +470,9 @@ function adminSendTrigger(token, request) {
     const language = cleanText(request.whatsappLanguage || PropertiesService.getScriptProperties().getProperty('WA_TEMPLATE_LANGUAGE') || 'en', 20, 'WhatsApp language', true);
     whatsappRecipients.forEach(record => {
       try {
-        sendWhatsAppTemplate(record, templateName, language, personalize(message, record.name), mapUrl);
+        const messageId = sendWhatsAppTemplate(record, templateName, language, personalize(message, record.name), mapUrl);
         result.whatsappSent += 1;
+        if (result.whatsappMessageIds.length < 3) result.whatsappMessageIds.push(messageId);
       } catch (error) {
         result.whatsappFailed += 1;
         if (result.errors.length < 3) result.errors.push(summarizeWhatsAppError(error));
@@ -525,13 +526,14 @@ function adminSendSignupTrigger(token, request) {
     lock.releaseLock();
   }
 
-  const result = { whatsappSent: 0, whatsappFailed: 0, pendingCount: 0, errors: [] };
+  const result = { whatsappSent: 0, whatsappFailed: 0, whatsappMessageIds: [], pendingCount: 0, errors: [] };
   claimed.forEach(record => {
     try {
-      sendWhatsAppSignupTemplate(record, templateName, language);
+      const messageId = sendWhatsAppSignupTemplate(record, templateName, language);
       result.whatsappSent += 1;
+      if (result.whatsappMessageIds.length < 3) result.whatsappMessageIds.push(messageId);
       try {
-        sheet.getRange(record.rowNumber, trackingColumn).setValue('Sent|' + new Date().toISOString());
+        sheet.getRange(record.rowNumber, trackingColumn).setValue('Accepted|' + new Date().toISOString());
       } catch (statusError) {
         if (result.errors.length < 3) result.errors.push('A message was sent, but its sent status could not be saved.');
       }
@@ -587,7 +589,7 @@ function personalize(text, name) {
 }
 
 function sendWhatsAppTemplate(record, templateName, language, message, mapUrl) {
-  sendWhatsAppTemplateWithParameters(record, templateName, language, [
+  return sendWhatsAppTemplateWithParameters(record, templateName, language, [
     { type: 'text', text: record.name || 'there' },
     { type: 'text', text: message },
     { type: 'text', text: mapUrl || 'Location details will be shared shortly.' }
@@ -595,7 +597,7 @@ function sendWhatsAppTemplate(record, templateName, language, message, mapUrl) {
 }
 
 function sendWhatsAppSignupTemplate(record, templateName, language) {
-  sendWhatsAppTemplateWithParameters(record, templateName, language, [
+  return sendWhatsAppTemplateWithParameters(record, templateName, language, [
     { type: 'text', text: record.name || 'there' }
   ]);
 }
@@ -632,7 +634,18 @@ function sendWhatsAppTemplateWithParameters(record, templateName, language, para
     muteHttpExceptions: true
   });
   const status = response.getResponseCode();
-  if (status < 200 || status >= 300) throw new Error('WhatsApp API error: ' + response.getContentText().slice(0, 300));
+  const responseText = response.getContentText();
+  if (status < 200 || status >= 300) throw new Error('WhatsApp API error: ' + responseText.slice(0, 300));
+  let responseBody;
+  try {
+    responseBody = JSON.parse(responseText);
+  } catch (error) {
+    throw new Error('WhatsApp API returned HTTP ' + status + ' but the response was not valid JSON. Check the Apps Script execution log.');
+  }
+  const messageId = responseBody && responseBody.messages && responseBody.messages[0] && responseBody.messages[0].id;
+  if (!messageId) throw new Error('WhatsApp API returned HTTP ' + status + ' without a message ID. Response: ' + responseText.slice(0, 300));
+  console.log('WhatsApp request accepted by Meta; message ID: ' + messageId);
+  return messageId;
 }
 
 function summarizeWhatsAppError(error) {
