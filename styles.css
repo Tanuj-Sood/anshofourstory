@@ -34,7 +34,6 @@ body.invitation-locked{overflow:hidden}
 .countdown-scratch-hint{position:absolute;z-index:6;top:-27px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw;color:#9a7c83;font:400 8px var(--sans);letter-spacing:.14em;text-align:center;text-transform:uppercase;pointer-events:none;transition:opacity .25s ease}
 .countdown-scratch-hint.is-hidden{opacity:0}
 @media(max-width:650px){.countdown-scratch-hint{top:-24px;font-size:7px;letter-spacing:.1em}}
-.time-card>.countdown-scratch{left:-1px;top:-1px;right:auto;bottom:auto}
 .contact-requirement{margin:-7px 0 15px;color:#a58b90;font:italic 10px/1.5 var(--serif);text-align:center}
 .required-mark{color:#bf7281;font-size:11px}
 .rsvp form>label small{display:block;margin:5px 0 2px;color:#a58b90;font:italic 11px var(--serif);letter-spacing:0;text-transform:none}
@@ -99,3 +98,10 @@ body.invitation-locked{overflow:hidden}
 @media(max-width:760px){.event-section{padding:50px 18px}.event-invitation{grid-template-columns:minmax(0,1fr);gap:28px;max-width:560px}.event-art{width:min(72vw,340px)}.event-invitation-reverse .event-art{order:0}.event-invitation-reverse .event-copy{order:1}.event-copy{max-width:none;text-align:center}.event-copy .eyebrow{font-size:8px}.event-warmth{margin:14px auto 22px;font-size:17px}.event-facts{max-width:390px;margin:0 auto 22px;text-align:left}.event-map{margin:19px auto 16px}.event-map iframe{height:185px}.event-copy h2{font-size:54px}}
 @media(max-width:420px){.event-section{padding:38px 15px}.event-art{width:min(78vw,320px);padding:6px}.event-warmth{font-size:16px}.event-facts dd{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.petals#falling-petals .petal{transition:none}}
+
+/* One shared scratch surface across the four countdown cards, with a petal trail while scratching. */
+.countdown-scratch{right:auto;bottom:auto}
+.scratch-petal{position:absolute;z-index:8;width:8px;height:12px;border-radius:90% 4% 90% 4%;background:#e7a6b6;opacity:.9;pointer-events:none;transform:rotate(35deg);animation:scratchPetalFall 1s ease-in forwards}
+.scratch-petal:nth-of-type(2n){width:6px;height:10px;background:#f0bdc8}
+@keyframes scratchPetalFall{0%{opacity:0;transform:translate3d(0,-5px,0) rotate(0) scale(.7)}15%{opacity:.95}100%{opacity:0;transform:translate3d(var(--petal-drift),48px,0) rotate(240deg) scale(1)}}
+@media(prefers-reduced-motion:reduce){.scratch-petal{animation-duration:.01ms!important}}

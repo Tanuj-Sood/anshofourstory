@@ -55,59 +55,73 @@
     const scratchHint = document.createElement('span');
     scratchHint.className = 'countdown-scratch-hint';
     scratchHint.textContent = 'Scratch across the cards to reveal your countdown';
-    const countdownDigits = [...countdown.querySelectorAll('.time-card > span')];
-    countdownDigits.forEach(digit => digit.setAttribute('aria-hidden', 'true'));
+    const digits = [...countdown.querySelectorAll('.time-card > span')];
+    digits.forEach(digit => digit.setAttribute('aria-hidden', 'true'));
     countdown.append(scratchHint);
 
-    const scratchLayers = [...countdown.querySelectorAll('.time-card')].map(card => {
-      const canvas = document.createElement('canvas');
-      canvas.className = 'countdown-scratch';
-      canvas.setAttribute('role', 'button');
-      canvas.setAttribute('aria-label', 'Scratch this card to reveal the wedding countdown. Press Space or Enter to reveal.');
-      canvas.tabIndex = 0;
-      card.append(canvas);
-      return { card, canvas, context: canvas.getContext('2d'), segments: [], previousPoint: null };
-    });
+    const canvas = document.createElement('canvas');
+    canvas.className = 'countdown-scratch';
+    countdown.style.position = 'relative';
+    canvas.style.position = 'absolute';
+    canvas.setAttribute('role', 'button');
+    canvas.setAttribute('aria-label', 'Scratch across the countdown cards to reveal the wedding countdown. Press Space or Enter to reveal.');
+    canvas.tabIndex = 0;
+    countdown.append(canvas);
+    const context = canvas.getContext('2d');
+    const scratch = { segments: [], previousPoint: null };
     let pixelRatio = 1;
-    let segmentCount = 0;
     let isRevealed = false;
+    let segmentCount = 0;
+    let lastPetalAt = 0;
+    const scratchPetalColors = ['#628b50', '#e8b8c2', '#b82e3a', '#9671b8'];
 
-    const roundedRect = (context, x, y, width, height, radius) => {
-      context.beginPath();
-      context.roundRect(x, y, width, height, radius);
+    const getSurface = () => {
+      const cards = [...countdown.querySelectorAll('.time-card')];
+      const parent = (canvas.offsetParent || countdown).getBoundingClientRect();
+      const bounds = cards.map(card => card.getBoundingClientRect());
+      return {
+        left: bounds[0].left - parent.left,
+        top: bounds[0].top - parent.top,
+        width: bounds[bounds.length - 1].right - bounds[0].left,
+        height: Math.max.apply(null, bounds.map(rect => rect.height))
+      };
     };
-
-    const drawScratchCoating = layer => {
-      const bounds = layer.card.getBoundingClientRect();
-      if (!bounds.width || !bounds.height) return;
+    const roundedRect = (ctx, x, y, width, height, radius) => {
+      ctx.beginPath();
+      ctx.roundRect(x, y, width, height, radius);
+    };
+    const drawScratchCoating = () => {
+      const surface = getSurface();
+      if (!surface.width || !surface.height) return;
       pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      layer.canvas.width = Math.round(bounds.width * pixelRatio);
-      layer.canvas.height = Math.round(bounds.height * pixelRatio);
-      layer.canvas.style.width = `${bounds.width}px`;
-      layer.canvas.style.height = `${bounds.height}px`;
-      const context = layer.context;
+      canvas.width = Math.round(surface.width * pixelRatio);
+      canvas.height = Math.round(surface.height * pixelRatio);
+      canvas.style.left = surface.left + 'px';
+      canvas.style.top = surface.top + 'px';
+      canvas.style.width = surface.width + 'px';
+      canvas.style.height = surface.height + 'px';
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      const radius = Math.min(13, bounds.width * .14);
-      const gradient = context.createLinearGradient(0, 0, bounds.width, bounds.height);
+      const radius = Math.min(13, surface.height * .14);
+      const gradient = context.createLinearGradient(0, 0, surface.width, surface.height);
       gradient.addColorStop(0, '#f8eef0');
       gradient.addColorStop(.48, '#e9cbd1');
       gradient.addColorStop(1, '#d9b1ba');
-      roundedRect(context, 0, 0, bounds.width, bounds.height, radius);
+      roundedRect(context, 0, 0, surface.width, surface.height, radius);
       context.fillStyle = gradient;
       context.fill();
       context.save();
-      roundedRect(context, 0, 0, bounds.width, bounds.height, radius);
+      roundedRect(context, 0, 0, surface.width, surface.height, radius);
       context.clip();
       context.strokeStyle = 'rgba(255,255,255,.27)';
       context.lineWidth = 1;
-      for (let x = -bounds.height; x < bounds.width + bounds.height; x += 9) {
+      for (let x = -surface.height; x < surface.width + surface.height; x += 9) {
         context.beginPath();
         context.moveTo(x, 0);
-        context.lineTo(x + bounds.height, bounds.height);
+        context.lineTo(x + surface.height, surface.height);
         context.stroke();
       }
       context.restore();
-      roundedRect(context, .5, .5, bounds.width - 1, bounds.height - 1, radius);
+      roundedRect(context, .5, .5, surface.width - 1, surface.height - 1, radius);
       context.strokeStyle = 'rgba(199,178,125,.88)';
       context.lineWidth = 1;
       context.stroke();
@@ -115,20 +129,19 @@
       context.textBaseline = 'middle';
       context.fillStyle = '#9a6d78';
       context.font = '400 13px Georgia, serif';
-      context.fillText('*', bounds.width / 2, bounds.height / 2 - 20);
+      context.fillText('*', surface.width / 2, surface.height / 2 - 20);
       context.fillStyle = '#815d66';
-      context.font = `500 ${bounds.width < 75 ? 7 : 8}px Arial, sans-serif`;
-      context.fillText('SCRATCH', bounds.width / 2, bounds.height / 2 - 3);
+      context.font = '500 8px Arial, sans-serif';
+      context.fillText('SCRATCH', surface.width / 2, surface.height / 2 - 3);
       context.fillStyle = '#9a6d78';
-      context.font = `400 ${bounds.width < 75 ? 6 : 7}px Arial, sans-serif`;
-      context.fillText('TO REVEAL', bounds.width / 2, bounds.height / 2 + 10);
-
-      if (layer.segments.length) {
+      context.font = '400 7px Arial, sans-serif';
+      context.fillText('TO REVEAL', surface.width / 2, surface.height / 2 + 10);
+      if (scratch.segments.length) {
         context.globalCompositeOperation = 'destination-out';
         context.lineCap = 'round';
         context.lineJoin = 'round';
         context.lineWidth = 34;
-        layer.segments.forEach(segment => {
+        scratch.segments.forEach(segment => {
           context.beginPath();
           context.moveTo(segment[0], segment[1]);
           context.lineTo(segment[2], segment[3]);
@@ -137,85 +150,95 @@
         context.globalCompositeOperation = 'source-over';
       }
     };
-
     const getScratchCoverage = () => {
+      const width = canvas.width / pixelRatio;
+      const height = canvas.height / pixelRatio;
+      const image = context.getImageData(0, 0, canvas.width, canvas.height).data;
       let sampled = 0;
       let cleared = 0;
-      scratchLayers.forEach(layer => {
-        const width = layer.canvas.width / pixelRatio;
-        const height = layer.canvas.height / pixelRatio;
-        const image = layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height).data;
-        for (let y = 6; y < height - 6; y += 12) {
-          for (let x = 6; x < width - 6; x += 12) {
-            const index = (Math.floor(y * pixelRatio) * layer.canvas.width + Math.floor(x * pixelRatio)) * 4 + 3;
-            sampled += 1;
-            if (image[index] < 80) cleared += 1;
-          }
+      for (let y = 6; y < height - 6; y += 12) {
+        for (let x = 6; x < width - 6; x += 12) {
+          const index = (Math.floor(y * pixelRatio) * canvas.width + Math.floor(x * pixelRatio)) * 4 + 3;
+          sampled++;
+          if (image[index] < 80) cleared++;
         }
-      });
+      }
       return sampled ? cleared / sampled : 0;
     };
-
+    const makeScratchPetals = point => {
+      const now = Date.now();
+      if (now - lastPetalAt < 55) return;
+      lastPetalAt = now;
+      const surface = getSurface();
+      for (let i = 0; i < 2; i++) {
+        const petal = document.createElement('i');
+        petal.className = 'scratch-petal';
+        petal.setAttribute('aria-hidden', 'true');
+        petal.style.backgroundColor = scratchPetalColors[Math.floor(Math.random() * scratchPetalColors.length)];
+        petal.style.left = (surface.left + point.x + (Math.random() * 18 - 9)) + 'px';
+        petal.style.top = (surface.top + point.y - 4) + 'px';
+        petal.style.setProperty('--petal-drift', (Math.random() * 54 - 27) + 'px');
+        petal.style.animationDuration = (0.85 + Math.random() * 0.45) + 's';
+        countdown.append(petal);
+        window.setTimeout(() => petal.remove(), 1400);
+      }
+    };
     const revealCountdown = () => {
       if (isRevealed) return;
       isRevealed = true;
-      scratchLayers.forEach(({ canvas }) => {
-        canvas.classList.add('is-revealed');
-        canvas.setAttribute('aria-hidden', 'true');
-        canvas.tabIndex = -1;
-      });
+      canvas.classList.add('is-revealed');
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.tabIndex = -1;
       scratchHint.classList.add('is-hidden');
-      countdownDigits.forEach(digit => digit.removeAttribute('aria-hidden'));
-      window.setTimeout(() => {
-        scratchLayers.forEach(({ canvas }) => canvas.remove());
-        scratchHint.remove();
-      }, 650);
+      digits.forEach(digit => digit.removeAttribute('aria-hidden'));
+      window.setTimeout(() => { canvas.remove(); scratchHint.remove(); }, 650);
     };
 
-    scratchLayers.forEach(layer => {
-      drawScratchCoating(layer);
-      layer.canvas.addEventListener('pointerdown', event => {
-        if (isRevealed) return;
-        event.preventDefault();
-        layer.canvas.setPointerCapture(event.pointerId);
-        const rect = layer.canvas.getBoundingClientRect();
-        layer.previousPoint = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-      });
-      layer.canvas.addEventListener('pointermove', event => {
-        if (!layer.previousPoint || isRevealed) return;
-        event.preventDefault();
-        const rect = layer.canvas.getBoundingClientRect();
-        const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-        const distance = Math.hypot(point.x - layer.previousPoint.x, point.y - layer.previousPoint.y);
-        if (distance < 3) return;
-        const context = layer.context;
-        context.globalCompositeOperation = 'destination-out';
-        context.lineCap = 'round';
-        context.lineJoin = 'round';
-        context.lineWidth = 34;
-        context.beginPath();
-        context.moveTo(layer.previousPoint.x, layer.previousPoint.y);
-        context.lineTo(point.x, point.y);
-        context.stroke();
-        context.globalCompositeOperation = 'source-over';
-        layer.segments.push([layer.previousPoint.x, layer.previousPoint.y, point.x, point.y]);
-        layer.previousPoint = point;
-        segmentCount += 1;
-        if (segmentCount % 3 === 0 && getScratchCoverage() >= .55) revealCountdown();
-      });
-      const stopScratching = () => { layer.previousPoint = null; };
-      layer.canvas.addEventListener('pointerup', stopScratching);
-      layer.canvas.addEventListener('pointercancel', stopScratching);
-      layer.canvas.addEventListener('keydown', event => {
-        if (!isRevealed && (event.code === 'Space' || event.code === 'Enter')) {
-          event.preventDefault();
-          revealCountdown();
-        }
-      });
+    drawScratchCoating();
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      if (!isRevealed) drawScratchCoating();
+    }));
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => { if (!isRevealed) drawScratchCoating(); });
+    }
+    canvas.addEventListener('pointerdown', event => {
+      if (isRevealed) return;
+      event.preventDefault();
+      canvas.setPointerCapture(event.pointerId);
+      const rect = canvas.getBoundingClientRect();
+      scratch.previousPoint = { x: event.clientX - rect.left, y: event.clientY - rect.top };
     });
-    window.addEventListener('resize', () => {
-      if (!isRevealed) scratchLayers.forEach(drawScratchCoating);
-    }, { passive: true });
+    canvas.addEventListener('pointermove', event => {
+      if (!scratch.previousPoint || isRevealed) return;
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      if (Math.hypot(point.x - scratch.previousPoint.x, point.y - scratch.previousPoint.y) < 3) return;
+      context.globalCompositeOperation = 'destination-out';
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      context.lineWidth = 34;
+      context.beginPath();
+      context.moveTo(scratch.previousPoint.x, scratch.previousPoint.y);
+      context.lineTo(point.x, point.y);
+      context.stroke();
+      context.globalCompositeOperation = 'source-over';
+      scratch.segments.push([scratch.previousPoint.x, scratch.previousPoint.y, point.x, point.y]);
+      scratch.previousPoint = point;
+      segmentCount++;
+      makeScratchPetals(point);
+      if (segmentCount % 3 === 0 && getScratchCoverage() >= .45) revealCountdown();
+    });
+    const stopScratching = () => { scratch.previousPoint = null; };
+    canvas.addEventListener('pointerup', stopScratching);
+    canvas.addEventListener('pointercancel', stopScratching);
+    canvas.addEventListener('keydown', event => {
+      if (!isRevealed && (event.code === 'Space' || event.code === 'Enter')) {
+        event.preventDefault();
+        revealCountdown();
+      }
+    });
+    window.addEventListener('resize', () => { if (!isRevealed) drawScratchCoating(); }, { passive: true });
   }
   const petalField = document.getElementById('falling-petals');
   if (petalField) {
@@ -243,12 +266,15 @@
     const paintPetals = () => {
       const scrollY = window.scrollY;
       const eventStarts = eventSections.map(tone => ({ color: tone.color, top: tone.section.getBoundingClientRect().top + scrollY }));
+      const weddingSection = eventSections.find(tone => tone.id === 'wedding')?.section;
+      const weddingBottom = weddingSection ? weddingSection.getBoundingClientRect().bottom + scrollY : Infinity;
       petals.forEach(petal => {
         const fallingY = petal.getBoundingClientRect().top + scrollY;
         let color = '#e8b8c2';
         eventStarts.forEach(tone => {
           if (fallingY >= tone.top) color = tone.color;
         });
+        if (fallingY >= weddingBottom) color = '#e8b8c2';
         if (petal.dataset.toneColor !== color) {
           petal.dataset.toneColor = color;
           petal.style.backgroundColor = color;
@@ -413,7 +439,6 @@
   attachSheetForm(document.getElementById('guest-notes-form'), data => {
     const wishOrMemory = String(data.get('wishOrMemory') || '').trim();
     const marriedLifeAdvice = String(data.get('marriedLifeAdvice') || '').trim();
-    if (!wishOrMemory && !marriedLifeAdvice) return { error: 'Please share a wish, memory, or a little advice before sending.' };
     return {
       type: 'guest_note',
       name: data.get('name'),
