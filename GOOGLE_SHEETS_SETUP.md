@@ -26,3 +26,16 @@ The private event admin page and trigger setup are described in [ADMIN_SETUP.md]
 ## Read the greetings at the event
 
 The slideshow at `/LetsReadRSVP/` reads only guest names, RSVP messages, wishes or memories, and married-life advice. Its read-only Apps Script response is public so the event display can load without signing in; it does not return email addresses, phone numbers, attendance, or consent fields. After updating `google-apps-script/Code.gs`, create a new version of the existing web app deployment (Deploy → Manage deployments → Edit → New version → Deploy) so the `read_greetings` action becomes available at the existing `/exec` URL.
+
+## DeepSeek moderation queues
+
+New RSVP and guest-note submissions are first written to their moderation queue. A one-minute Apps Script trigger sends the guest name and public message or wish fields to DeepSeek. Approved submissions are copied to the existing RSVP or Guest Notes sheet; rejected submissions go to the rejection spreadsheet. API failures, invalid responses, and missing verdicts leave entries pending for another attempt the next minute. The worker removes its recurring trigger when both queues have no pending entries; the next submission starts it again. The public RSVP reader and admin data paths continue reading the original destination spreadsheets.
+
+Spreadsheet IDs are configured in google-apps-script/Code.gs under MODERATION:
+
+- Queue_RSVP: 1wBxyGT1SLNPkh7FmcwP43oABgV2deO7FH5Y0wSojXr0
+- Queue_Guest_notes: 1mUdTzmLDO-SroVRFQHuHGy-DDeaE9PBpNCVp88ISIHY
+- Rejected_by_LLM_RSVP: 125u1nLpc5BLgdmf5psSSMUGtVGPekbRPvE8Pwj6zp2E
+- Rejected_by_LLM_Guest_notes: 165xv99j870R_wFNcPyl6Rycvj2LQLEmKdPXKBElCWu8
+
+Keep the DeepSeek key out of the website and repository. In Apps Script open Project Settings, then Script Properties, and add DEEPSEEK_API_KEY with your key as its value. After replacing Code.gs, run setupModerationWorker once from the Apps Script editor and approve the requested spreadsheet and external request permissions. Then deploy a new version of the existing web app. The worker trigger runs every minute while pending entries remain.
